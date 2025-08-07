@@ -440,4 +440,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get emailHint => 'Introduce correo electrónico';
+
+  @override
+  String get family_name_placeholder => 'Cargando nombre de familia...';
 }

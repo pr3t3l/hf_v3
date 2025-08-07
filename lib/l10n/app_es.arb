@@ -47,8 +47,6 @@
     }
   },
   "homeDescription": "Este es tu centro familiar personalizado.",
-
-
   "familySelectionTitle": "Centro Familiar",
   "noFamilyMessage": "Aún no perteneces a ninguna familia. ¡Crea una o únete a una existente!",
   "createFamilyButton": "Crear Nueva Familia",
@@ -67,7 +65,6 @@
       "error": {}
     }
   },
-
   "createFamilyTitle": "Crear Nueva Familia",
   "createFamilyDescription": "¡Dale un nombre a tu familia para empezar!",
   "familyNameLabel": "Nombre de la Familia",
@@ -80,8 +77,6 @@
       "error": {}
     }
   },
-
-
   "joinFamilyTitle": "Unirse a una Familia",
   "joinFamilyDescription": "Introduce el código de invitación que recibiste.",
   "invitationCodeLabel": "Código de Invitación",
@@ -115,8 +110,6 @@
       "error": {}
     }
   },
-
-
   "familyDetailsTitle": "Detalles de la Familia",
   "registeredMembersTitle": "Miembros Registrados",
   "unregisteredMembersTitle": "Otros Miembros de la Familia",
@@ -144,15 +137,12 @@
   },
   "inviteMemberButton": "Invitar Miembro",
   "viewFamilyTreeButton": "Ver Árbol Familiar",
-
   "errorLoadingFamilyDetails": "Error al cargar detalles de la familia: {error}",
   "@errorLoadingFamilyDetails": {
     "placeholders": {
       "error": {}
     }
   },
-
-
   "inviteMemberTitle": "Invitar/Añadir Miembro",
   "registeredUserToggle": "Invitar Usuario Registrado (por Email)",
   "memberNameLabel": "Nombre del Miembro",
@@ -182,8 +172,6 @@
       "error": {}
     }
   },
-
-
   "manageRolesTitle": "Gestionar Rol del Miembro",
   "manageRoleFor": "Gestionando rol para: {memberName}",
   "@manageRoleFor": {
@@ -208,13 +196,8 @@
       "error": {}
     }
   },
-
-
-
   "noFamilySelected": "Ninguna familia seleccionada",
   "errorLoadingFamiliesShort": "Error al cargar familias.",
-
-
   "notificationsTitle": "Notificaciones",
   "noPendingInvitations": "No tienes invitaciones familiares pendientes.",
   "invitationReceivedTitle": "Nueva Invitación Familiar",
@@ -240,14 +223,10 @@
       "error": {}
     }
   },
-
-
   "role_parent": "Padre/Madre",
   "role_child": "Hijo/a",
   "role_guardian": "Tutor/a",
   "role_administrator": "Administrador/a",
-
-
   "relationship_sibling": "Hermano/a",
   "relationship_spouse": "Cónyuge",
   "relationship_cousin": "Primo/a",
@@ -255,8 +234,6 @@
   "relationship_other": "Otro",
   "relationship_pet": "Mascota",
   "relationship_deceased": "Fallecido/a",
-
-
   "settingsComingSoon": "¡Configuración pronto disponible!",
   "navHome": "Inicio",
   "navFamily": "Familia",
@@ -264,5 +241,6 @@
   "navGames": "Juegos",
   "navProfile": "Perfil",
   "confirmPasswordRequired": "Confirmar contraseña es obligatorio.",
-  "emailHint": "Introduce correo electrónico"
+  "emailHint": "Introduce correo electrónico",
+  "family_name_placeholder": "Cargando nombre de familia..."
 }

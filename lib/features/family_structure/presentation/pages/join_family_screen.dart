@@ -98,9 +98,7 @@ class _JoinFamilyScreenState extends ConsumerState<JoinFamilyScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                AppLocalizations.of(
-                  context,
-                )!.familyJoinedError(e.toString()), // Corrected to use method
+                AppLocalizations.of(context)!.familyJoinedError(e.toString()),
                 style: TextStyle(color: Theme.of(context).colorScheme.onError),
               ),
               backgroundColor: Theme.of(context).colorScheme.error,
@@ -120,11 +118,12 @@ class _JoinFamilyScreenState extends ConsumerState<JoinFamilyScreen> {
   Widget build(BuildContext context) {
     final familyState = ref.watch(familyControllerProvider);
     final appLocalizations = AppLocalizations.of(context)!;
+    final familyService = ref.read(
+      familyServiceProvider,
+    ); // Get FamilyService to fetch family names
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(appLocalizations.joinFamilyTitle),
-      ), // Corrected to use getter
+      appBar: AppBar(title: Text(appLocalizations.joinFamilyTitle)),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
@@ -134,8 +133,7 @@ class _JoinFamilyScreenState extends ConsumerState<JoinFamilyScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  appLocalizations
-                      .joinFamilyDescription, // Corrected to use getter
+                  appLocalizations.joinFamilyDescription,
                   style: Theme.of(context).textTheme.bodyLarge,
                   textAlign: TextAlign.center,
                 ),
@@ -143,10 +141,8 @@ class _JoinFamilyScreenState extends ConsumerState<JoinFamilyScreen> {
                 TextFormField(
                   controller: _invitationCodeController,
                   decoration: InputDecoration(
-                    labelText: appLocalizations
-                        .invitationCodeLabel, // Corrected to use getter
-                    hintText: appLocalizations
-                        .invitationCodeHint, // Corrected to use getter
+                    labelText: appLocalizations.invitationCodeLabel,
+                    hintText: appLocalizations.invitationCodeHint,
                   ),
                   textCapitalization:
                       TextCapitalization.characters, // For easier code entry
@@ -164,13 +160,11 @@ class _JoinFamilyScreenState extends ConsumerState<JoinFamilyScreen> {
                   },
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return appLocalizations
-                          .invitationCodeRequired; // Corrected to use getter
+                      return appLocalizations.invitationCodeRequired;
                     }
                     if (value.length != 8) {
                       // Assuming 8 char code
-                      return appLocalizations
-                          .invitationCodeInvalidLength; // Corrected to use getter
+                      return appLocalizations.invitationCodeInvalidLength;
                     }
                     return null;
                   },
@@ -190,27 +184,45 @@ class _JoinFamilyScreenState extends ConsumerState<JoinFamilyScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                appLocalizations
-                                    .invitationDetailsTitle, // Corrected to use getter
+                                appLocalizations.invitationDetailsTitle,
                                 style: Theme.of(context).textTheme.titleMedium,
                               ),
                               const SizedBox(height: 8),
                               Text(
                                 appLocalizations.invitationFrom(
-                                  // Corrected to use method
                                   _invitationDetails!.invitedByDisplayName,
                                 ),
                               ),
-                              Text(
-                                appLocalizations.invitationToFamily(
-                                  // Corrected to use method
+                              // Fetch family name using FutureBuilder
+                              FutureBuilder<String>(
+                                future: familyService.getFamilyName(
                                   _invitationDetails!.familyId,
                                 ),
-                              ), // Family name would be better, requires another fetch
-                              // TODO: Fetch family name using invitation.familyId for better UX
+                                builder: (context, snapshot) {
+                                  if (snapshot.connectionState ==
+                                      ConnectionState.waiting) {
+                                    return Text(
+                                      appLocalizations.invitationToFamily(
+                                        '...',
+                                      ),
+                                    ); // Placeholder
+                                  } else if (snapshot.hasError) {
+                                    return Text(
+                                      appLocalizations.invitationToFamily(
+                                        'Error',
+                                      ),
+                                    );
+                                  } else {
+                                    return Text(
+                                      appLocalizations.invitationToFamily(
+                                        snapshot.data ?? 'Familia Desconocida',
+                                      ),
+                                    );
+                                  }
+                                },
+                              ),
                               Text(
                                 appLocalizations.invitationExpires(
-                                  // Corrected to use method
                                   _invitationDetails!.expiresAt
                                       .toDate()
                                       .toLocal()
@@ -225,8 +237,7 @@ class _JoinFamilyScreenState extends ConsumerState<JoinFamilyScreen> {
                     : _invitationCodeController.text.isNotEmpty &&
                           !_isLoadingInvitation
                     ? Text(
-                        appLocalizations
-                            .noInvitationFound, // Corrected to use getter
+                        appLocalizations.noInvitationFound,
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.error,
                         ),
@@ -242,9 +253,7 @@ class _JoinFamilyScreenState extends ConsumerState<JoinFamilyScreen> {
                             ? _joinFamily
                             : null, // Enable only if invitation details are fetched
                         style: Theme.of(context).elevatedButtonTheme.style,
-                        child: Text(
-                          appLocalizations.joinFamilyButton,
-                        ), // Corrected to use getter
+                        child: Text(appLocalizations.joinFamilyButton),
                       ),
               ],
             ),

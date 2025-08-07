@@ -10,8 +10,11 @@ import 'package:hf_v3/features/family_structure/services/family_service.dart'; /
 // Provider to stream pending invitations for the current user
 final pendingInvitationsStreamProvider =
     StreamProvider.autoDispose<List<Invitation>>((ref) {
-  return ref.watch(familyServiceProvider).getPendingInvitationsStream();
-});
+      final familyService = ref.watch(
+        familyServiceProvider,
+      ); // Get the service instance
+      return familyService.getPendingInvitationsStream(); // Use the new method
+    });
 
 class NotificationsScreen extends ConsumerWidget {
   const NotificationsScreen({super.key});
@@ -23,20 +26,18 @@ class NotificationsScreen extends ConsumerWidget {
       pendingInvitationsStreamProvider,
     );
     final familyController = ref.read(familyControllerProvider.notifier);
+    final familyService = ref.read(
+      familyServiceProvider,
+    ); // Get FamilyService to fetch family names
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          appLocalizations.notificationsTitle,
-        ), // Corrected to use getter
-      ),
+      appBar: AppBar(title: Text(appLocalizations.notificationsTitle)),
       body: pendingInvitationsAsyncValue.when(
         data: (invitations) {
           if (invitations.isEmpty) {
             return Center(
               child: Text(
-                appLocalizations
-                    .noPendingInvitations, // Corrected to use getter
+                appLocalizations.noPendingInvitations,
                 style: Theme.of(context).textTheme.titleMedium,
                 textAlign: TextAlign.center,
               ),
@@ -55,8 +56,7 @@ class NotificationsScreen extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        appLocalizations
-                            .invitationReceivedTitle, // Corrected to use getter
+                        appLocalizations.invitationReceivedTitle,
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       const SizedBox(height: 8),
@@ -64,12 +64,31 @@ class NotificationsScreen extends ConsumerWidget {
                         appLocalizations.invitationFrom(
                           invitation.invitedByDisplayName,
                         ),
-                      ), // Corrected to use method
-                      Text(
-                        appLocalizations.invitationToFamily(
+                      ),
+                      // Fetch family name using FutureBuilder for better UX
+                      FutureBuilder<String>(
+                        future: familyService.getFamilyName(
                           invitation.familyId,
-                        ),
-                      ), // TODO: Fetch family name for better UX // Corrected to use method
+                        ), // New method to get family name
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return Text(
+                              appLocalizations.invitationToFamily('...'),
+                            ); // Placeholder while loading
+                          } else if (snapshot.hasError) {
+                            return Text(
+                              appLocalizations.invitationToFamily('Error'),
+                            );
+                          } else {
+                            return Text(
+                              appLocalizations.invitationToFamily(
+                                snapshot.data ?? 'Familia Desconocida',
+                              ),
+                            );
+                          }
+                        },
+                      ),
                       Text(
                         appLocalizations.invitationExpires(
                           invitation.expiresAt
@@ -78,27 +97,25 @@ class NotificationsScreen extends ConsumerWidget {
                               .toString()
                               .split(' ')[0],
                         ),
-                      ), // Corrected to use method
+                      ),
                       const SizedBox(height: 16),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           TextButton(
                             onPressed: () async {
-                              // Logic to decline invitation (update status in Firestore)
                               try {
-                                // Guard against BuildContext across async gaps
                                 if (!context.mounted) return;
-                                await ref
-                                    .read(familyServiceProvider)
-                                    .declineInvitation(invitation.invitationId);
+                                await familyService.declineInvitation(
+                                  invitation.invitationId,
+                                ); // Use new method
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text(
                                         appLocalizations.invitationDeclined,
                                       ),
-                                    ), // Corrected to use getter
+                                    ),
                                   );
                                 }
                               } catch (e) {
@@ -110,26 +127,22 @@ class NotificationsScreen extends ConsumerWidget {
                                           e.toString(),
                                         ),
                                       ),
-                                    ), // Corrected to use method
+                                    ),
                                   );
                                 }
                               }
                             },
+                            child: Text(appLocalizations.declineButton),
                             style: TextButton.styleFrom(
                               foregroundColor: Theme.of(
                                 context,
                               ).colorScheme.error,
                             ),
-                            child: Text(
-                              appLocalizations.declineButton,
-                            ), // Corrected to use getter
                           ),
                           const SizedBox(width: 8),
                           ElevatedButton(
                             onPressed: () async {
-                              // Logic to accept invitation (call familyController.joinFamily)
                               try {
-                                // Guard against BuildContext across async gaps
                                 if (!context.mounted) return;
                                 await familyController.joinFamily(
                                   invitation.invitationCode,
@@ -140,7 +153,7 @@ class NotificationsScreen extends ConsumerWidget {
                                       content: Text(
                                         appLocalizations.invitationAccepted,
                                       ),
-                                    ), // Corrected to use getter
+                                    ),
                                   );
                                 }
                               } catch (e) {
@@ -152,19 +165,17 @@ class NotificationsScreen extends ConsumerWidget {
                                           e.toString(),
                                         ),
                                       ),
-                                    ), // Corrected to use method
+                                    ),
                                   );
                                 }
                               }
                             },
+                            child: Text(appLocalizations.acceptButton),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Theme.of(
                                 context,
                               ).colorScheme.secondary,
                             ),
-                            child: Text(
-                              appLocalizations.acceptButton,
-                            ), // Corrected to use getter
                           ),
                         ],
                       ),
@@ -182,9 +193,7 @@ class NotificationsScreen extends ConsumerWidget {
         ),
         error: (error, stack) => Center(
           child: Text(
-            appLocalizations.errorLoadingNotifications(
-              error.toString(),
-            ), // Corrected to use method
+            appLocalizations.errorLoadingNotifications(error.toString()),
             style: TextStyle(color: Theme.of(context).colorScheme.error),
           ),
         ),

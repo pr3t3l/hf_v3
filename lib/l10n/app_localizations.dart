@@ -856,6 +856,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enter email'**
   String get emailHint;
+
+  /// No description provided for @family_name_placeholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading family name...'**
+  String get family_name_placeholder;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
