@@ -254,5 +254,15 @@
   "relationship_grandparent": "Abuelo/a",
   "relationship_other": "Otro",
   "relationship_pet": "Mascota",
-  "relationship_deceased": "Fallecido/a"
+  "relationship_deceased": "Fallecido/a",
+
+
+  "settingsComingSoon": "¡Configuración pronto disponible!",
+  "navHome": "Inicio",
+  "navFamily": "Familia",
+  "navJournal": "Diario",
+  "navGames": "Juegos",
+  "navProfile": "Perfil",
+  "confirmPasswordRequired": "Confirmar contraseña es obligatorio.",
+  "emailHint": "Introduce correo electrónico"
 }

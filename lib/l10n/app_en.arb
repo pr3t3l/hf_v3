@@ -248,7 +248,17 @@
   "relationship_grandparent": "Grandparent",
   "relationship_other": "Other",
   "relationship_pet": "Pet",
-  "relationship_deceased": "Deceased"
+  "relationship_deceased": "Deceased",
+
+
+"settingsComingSoon": "Settings coming soon!",
+  "navHome": "Home",
+  "navFamily": "Family",
+  "navJournal": "Journal",
+  "navGames": "Games",
+  "navProfile": "Profile",
+  "confirmPasswordRequired": "Confirm password is required.",
+  "emailHint": "Enter email"
 }
 
 

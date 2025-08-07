@@ -416,4 +416,28 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get relationship_deceased => 'Fallecido/a';
+
+  @override
+  String get settingsComingSoon => '¡Configuración pronto disponible!';
+
+  @override
+  String get navHome => 'Inicio';
+
+  @override
+  String get navFamily => 'Familia';
+
+  @override
+  String get navJournal => 'Diario';
+
+  @override
+  String get navGames => 'Juegos';
+
+  @override
+  String get navProfile => 'Perfil';
+
+  @override
+  String get confirmPasswordRequired => 'Confirmar contraseña es obligatorio.';
+
+  @override
+  String get emailHint => 'Introduce correo electrónico';
 }
