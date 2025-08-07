@@ -244,6 +244,19 @@
     "placeholders": {
       "type": {}
     }
-  }
+  },
+  "confirmPasswordRequired": "Confirm Password is required.",
+  "emailHint": "Enter email",
+  "role_parent": "Parent",
+  "role_child": "Child",
+  "role_guardian": "Guardian",
+  "role_administrator": "Administrator",
+  "relationship_sibling": "Sibling",
+  "relationship_spouse": "Spouse",
+  "relationship_cousin": "Cousin",
+  "relationship_grandparent": "Grandparent",
+  "relationship_other": "Other",
+  "relationship_pet": "Pet",
+  "relationship_deceased": "Deceased"
 }
 

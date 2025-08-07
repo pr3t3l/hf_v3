@@ -132,12 +132,12 @@ class NotificationsScreen extends ConsumerWidget {
                                 }
                               }
                             },
-                            child: Text(appLocalizations.declineButton),
                             style: TextButton.styleFrom(
                               foregroundColor: Theme.of(
                                 context,
                               ).colorScheme.error,
                             ),
+                            child: Text(appLocalizations.declineButton),
                           ),
                           const SizedBox(width: 8),
                           ElevatedButton(
@@ -170,12 +170,12 @@ class NotificationsScreen extends ConsumerWidget {
                                 }
                               }
                             },
-                            child: Text(appLocalizations.acceptButton),
-                            style: ElevatedButton.styleFrom(
+                            style: ElevatedButton.stylefrom(
                               backgroundColor: Theme.of(
                                 context,
                               ).colorScheme.secondary,
                             ),
+                            child: Text(appLocalizations.acceptButton),
                           ),
                         ],
                       ),
