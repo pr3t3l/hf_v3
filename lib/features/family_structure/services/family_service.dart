@@ -317,75 +317,92 @@ class FamilyService {
       debugPrint(
         'FamilyService: Invitando usuario registrado por email: $emailOrName',
       );
-      final invitedUserQuery = await _firestore
-          .collection('users')
-          .where('email', isEqualTo: emailOrName)
-          .limit(1)
-          .get();
+      try {
+        final invitedUserQuery = await _firestore
+            .collection('users')
+            .where('email', isEqualTo: emailOrName)
+            .limit(1)
+            .get();
 
-      if (invitedUserQuery.docs.isEmpty) {
-        debugPrint(
-          'FamilyService: No se encontró usuario registrado con este email.',
+        if (invitedUserQuery.docs.isEmpty) {
+          debugPrint(
+            'FamilyService: No se encontró usuario registrado con este email.',
+          );
+          throw Exception("No registered user found with this email.");
+        }
+        final invitedUserId = invitedUserQuery.docs.first.id;
+        // final invitedUserProfile = UserProfile.fromFirestore(invitedUserQuery.docs.first); // This variable is unused, can be removed if not needed for future logic
+
+        // Check if already a member
+        if (family.memberUserIds.any(
+          (member) => member.userId == invitedUserId,
+        )) {
+          debugPrint(
+            'FamilyService: Error - Usuario ya es miembro de la familia.',
+          );
+          throw Exception("This user is already a member of the family.");
+        }
+
+        // Check for pending invitation to avoid duplicates
+        final existingInvitation = await _firestore
+            .collection('invitations')
+            .where('familyId', isEqualTo: familyId)
+            .where('invitedUserId', isEqualTo: invitedUserId)
+            .where('status', isEqualTo: 'pending')
+            .limit(1)
+            .get();
+
+        if (existingInvitation.docs.isNotEmpty) {
+          debugPrint(
+            'FamilyService: Ya existe una invitación pendiente para este usuario.',
+          );
+          throw Exception(
+            "There is already a pending invitation for this user to this family.",
+          );
+        }
+
+        // Create invitation
+        debugPrint('FamilyService: Creando el documento de invitación...');
+        final invitation = Invitation(
+          invitationId: _uuid.v4(), // Generate unique ID
+          familyId: familyId,
+          invitedByUserId: currentUserId!,
+          invitedByDisplayName:
+              currentUserProfile.displayName, // Store inviter's display name
+          invitedEmail: emailOrName,
+          invitedUserId: invitedUserId, // Store invited user's UID
+          initialRole: initialRole, // Pass role from inviter
+          initialRelationshipType:
+              initialRelationshipType, // Pass relationship from inviter
+          status: 'pending',
+          createdAt: Timestamp.now(),
+          expiresAt: Timestamp.fromDate(
+            DateTime.now().add(const Duration(days: 7)),
+          ), // Corrected Timestamp.fromDate
+          invitationCode:
+              _uuid.v4().substring(0, 8).toUpperCase(), // Short code
         );
-        throw Exception("No registered user found with this email.");
-      }
-      final invitedUserId = invitedUserQuery.docs.first.id;
-      // final invitedUserProfile = UserProfile.fromFirestore(invitedUserQuery.docs.first); // This variable is unused, can be removed if not needed for future logic
+        await _firestore
+            .collection('invitations')
+            .doc(invitation.invitationId)
+            .set(invitation.toFirestore());
 
-      // Check if already a member
-      if (family.memberUserIds.any(
-        (member) => member.userId == invitedUserId,
-      )) {
         debugPrint(
-          'FamilyService: Error - Usuario ya es miembro de la familia.',
+          'FamilyService: Documento de invitación creado con éxito en Firestore.',
         );
-        throw Exception("This user is already a member of the family.");
-      }
 
-      // Check for pending invitation to avoid duplicates
-      final existingInvitation = await _firestore
-          .collection('invitations')
-          .where('familyId', isEqualTo: familyId)
-          .where('invitedUserId', isEqualTo: invitedUserId)
-          .where('status', isEqualTo: 'pending')
-          .limit(1)
-          .get();
-
-      if (existingInvitation.docs.isNotEmpty) {
+        // TODO: Trigger Cloud Function to send email notification to invitedEmail
+        // debugPrint("Invitation created for ${invitation.invitedEmail} with code: ${invitation.invitationCode}"); // Removed print
+      } catch (e) {
         debugPrint(
-          'FamilyService: Ya existe una invitación pendiente para este usuario.',
+          'FamilyService: ERROR CRÍTICO durante el proceso de invitación. Esto es probablemente un problema de permisos de Firestore.',
         );
+        debugPrint('FamilyService: Error original: $e');
+        // Re-lanza una excepción más descriptiva para la UI.
         throw Exception(
-          "There is already a pending invitation for this user to this family.",
+          'Failed to send invitation. This might be due to security rules. Please check the debug console for more details.',
         );
       }
-
-      // Create invitation
-      final invitation = Invitation(
-        invitationId: _uuid.v4(), // Generate unique ID
-        familyId: familyId,
-        invitedByUserId: currentUserId!,
-        invitedByDisplayName:
-            currentUserProfile.displayName, // Store inviter's display name
-        invitedEmail: emailOrName,
-        invitedUserId: invitedUserId, // Store invited user's UID
-        initialRole: initialRole, // Pass role from inviter
-        initialRelationshipType:
-            initialRelationshipType, // Pass relationship from inviter
-        status: 'pending',
-        createdAt: Timestamp.now(),
-        expiresAt: Timestamp.fromDate(
-          DateTime.now().add(const Duration(days: 7)),
-        ), // Corrected Timestamp.fromDate
-        invitationCode: _uuid.v4().substring(0, 8).toUpperCase(), // Short code
-      );
-      await _firestore
-          .collection('invitations')
-          .doc(invitation.invitationId)
-          .set(invitation.toFirestore());
-
-      // TODO: Trigger Cloud Function to send email notification to invitedEmail
-      // debugPrint("Invitation created for ${invitation.invitedEmail} with code: ${invitation.invitationCode}"); // Removed print
     } else {
       // --- Add unregistered member by name (can be deceased/pet) ---
       debugPrint(
