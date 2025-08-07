@@ -3,26 +3,25 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hf_v3/features/family_structure/services/family_service.dart';
 import 'package:hf_v3/features/family_structure/data/models/family.dart'
-    as FamilyModel; // Alias for your Family model
-import 'package:hf_v3/features/authentication/services/auth_service.dart'; // To get current user ID
+    as family_model; // Alias for your Family model
 
 // Provider for FamilyController
 final familyControllerProvider =
     StateNotifierProvider<FamilyController, AsyncValue<void>>((ref) {
-      final familyService = ref.read(familyServiceProvider);
-      return FamilyController(familyService);
-    });
+  final familyService = ref.read(familyServiceProvider);
+  return FamilyController(familyService);
+});
 
 // Provider to stream the list of families the current user belongs to
 final userFamiliesStreamProvider =
-    StreamProvider.autoDispose<List<FamilyModel.Family>>((ref) {
-      // Use alias here
-      final familyService = ref.watch(familyServiceProvider);
-      return familyService.getUserFamiliesStream();
-    });
+    StreamProvider.autoDispose<List<family_model.Family>>((ref) {
+  // Use alias here
+  final familyService = ref.watch(familyServiceProvider);
+  return familyService.getUserFamiliesStream();
+});
 
 // Provider to watch the currently active family
-final activeFamilyProvider = StateProvider<FamilyModel.Family?>(
+final activeFamilyProvider = StateProvider<family_model.Family?>(
   (ref) => null,
 ); // Use alias here
 
@@ -34,10 +33,8 @@ class FamilyController extends StateNotifier<AsyncValue<void>> {
   Future<void> createFamily(String familyName) async {
     state = const AsyncValue.loading();
     try {
-      final newFamily = await _familyService.createFamily(familyName);
+      await _familyService.createFamily(familyName);
       state = const AsyncValue.data(null); // Success
-      // Optionally, set this new family as the active family
-      // ref.read(activeFamilyProvider.notifier).state = newFamily;
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }
@@ -46,10 +43,8 @@ class FamilyController extends StateNotifier<AsyncValue<void>> {
   Future<void> joinFamily(String invitationCode) async {
     state = const AsyncValue.loading();
     try {
-      final joinedFamily = await _familyService.joinFamily(invitationCode);
+      await _familyService.joinFamily(invitationCode);
       state = const AsyncValue.data(null); // Success
-      // Optionally, set this joined family as the active family
-      // ref.read(activeFamilyProvider.notifier).state = joinedFamily;
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }

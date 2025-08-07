@@ -39,6 +39,42 @@ class _InviteMemberScreenState extends ConsumerState<InviteMemberScreen> {
     super.dispose();
   }
 
+  String _getRoleTranslation(String role, AppLocalizations localizations) {
+    switch (role) {
+      case 'parent':
+        return localizations.role_parent;
+      case 'child':
+        return localizations.role_child;
+      case 'guardian':
+        return localizations.role_guardian;
+      case 'administrator':
+        return localizations.role_administrator;
+      default:
+        return role; // Fallback
+    }
+  }
+
+  String _getRelationshipTranslation(String type, AppLocalizations localizations) {
+    switch (type) {
+      case 'sibling':
+        return localizations.relationship_sibling;
+      case 'spouse':
+        return localizations.relationship_spouse;
+      case 'cousin':
+        return localizations.relationship_cousin;
+      case 'grandparent':
+        return localizations.relationship_grandparent;
+      case 'other':
+        return localizations.relationship_other;
+      case 'pet':
+        return localizations.relationship_pet;
+      case 'deceased':
+        return localizations.relationship_deceased;
+      default:
+        return type;
+    }
+  }
+
   Future<void> _inviteMember() async {
     if (_formKey.currentState!.validate()) {
       final familyController = ref.read(familyControllerProvider.notifier);
@@ -74,6 +110,7 @@ class _InviteMemberScreenState extends ConsumerState<InviteMemberScreen> {
           Navigator.of(context).pop(); // Go back to family details
         }
       } catch (e) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -167,7 +204,7 @@ class _InviteMemberScreenState extends ConsumerState<InviteMemberScreen> {
                       return DropdownMenuItem<String>(
                         value: role,
                         child: Text(
-                          appLocalizations.roleLabel(role),
+                          _getRoleTranslation(role, appLocalizations),
                         ), // Localize roles
                       );
                     }).toList(),
@@ -197,7 +234,7 @@ class _InviteMemberScreenState extends ConsumerState<InviteMemberScreen> {
                     return DropdownMenuItem<String>(
                       value: type,
                       child: Text(
-                        appLocalizations.relationshipLabel(type),
+                        _getRelationshipTranslation(type, appLocalizations),
                       ), // Localize relationships
                     );
                   }).toList(),

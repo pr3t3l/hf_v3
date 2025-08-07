@@ -39,10 +39,26 @@ class _ManageRolesScreenState extends ConsumerState<ManageRolesScreen> {
     _selectedRole = widget.currentRole;
   }
 
+  String _getRoleTranslation(String role, AppLocalizations localizations) {
+    switch (role) {
+      case 'parent':
+        return localizations.role_parent;
+      case 'child':
+        return localizations.role_child;
+      case 'guardian':
+        return localizations.role_guardian;
+      case 'administrator':
+        return localizations.role_administrator;
+      default:
+        return role; // Fallback
+    }
+  }
+
   Future<void> _updateRole() async {
     if (_selectedRole == null || _selectedRole == widget.currentRole) {
-      // No change or no role selected
-      Navigator.of(context).pop();
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
       return;
     }
 
@@ -65,9 +81,10 @@ class _ManageRolesScreenState extends ConsumerState<ManageRolesScreen> {
             margin: const EdgeInsets.all(16),
           ),
         );
-        Navigator.of(context).pop(); // Go back to family details
+        Navigator.of(context).pop();
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -106,7 +123,7 @@ class _ManageRolesScreenState extends ConsumerState<ManageRolesScreen> {
               const SizedBox(height: 16.0),
               Text(
                 appLocalizations.currentRoleLabel(
-                  appLocalizations.roleLabel(widget.currentRole),
+                  _getRoleTranslation(widget.currentRole, appLocalizations),
                 ),
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
@@ -121,7 +138,7 @@ class _ManageRolesScreenState extends ConsumerState<ManageRolesScreen> {
                   return DropdownMenuItem<String>(
                     value: role,
                     child: Text(
-                      appLocalizations.roleLabel(role),
+                      _getRoleTranslation(role, appLocalizations),
                     ), // Localize roles
                   );
                 }).toList(),

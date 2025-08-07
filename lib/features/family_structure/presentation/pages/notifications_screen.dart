@@ -10,26 +10,8 @@ import 'package:hf_v3/features/family_structure/services/family_service.dart'; /
 // Provider to stream pending invitations for the current user
 final pendingInvitationsStreamProvider =
     StreamProvider.autoDispose<List<Invitation>>((ref) {
-      final familyService = ref.watch(
-        familyServiceProvider,
-      ); // Get the service instance
-      final currentUserId =
-          familyService.currentUserId; // Access currentUserId from the service
-      if (currentUserId == null) {
-        return Stream.value([]);
-      }
-      // Use the _firestore instance from the service
-      return familyService._firestore
-          .collection('invitations')
-          .where('invitedUserId', isEqualTo: currentUserId)
-          .where('status', isEqualTo: 'pending')
-          .snapshots()
-          .map(
-            (snapshot) => snapshot.docs
-                .map((doc) => Invitation.fromFirestore(doc))
-                .toList(),
-          );
-    });
+  return ref.watch(familyServiceProvider).getPendingInvitationsStream();
+});
 
 class NotificationsScreen extends ConsumerWidget {
   const NotificationsScreen({super.key});
@@ -109,10 +91,7 @@ class NotificationsScreen extends ConsumerWidget {
                                 if (!context.mounted) return;
                                 await ref
                                     .read(familyServiceProvider)
-                                    ._firestore
-                                    .collection('invitations')
-                                    .doc(invitation.invitationId)
-                                    .update({'status': 'declined'});
+                                    .declineInvitation(invitation.invitationId);
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
@@ -136,14 +115,14 @@ class NotificationsScreen extends ConsumerWidget {
                                 }
                               }
                             },
-                            child: Text(
-                              appLocalizations.declineButton,
-                            ), // Corrected to use getter
                             style: TextButton.styleFrom(
                               foregroundColor: Theme.of(
                                 context,
                               ).colorScheme.error,
                             ),
+                            child: Text(
+                              appLocalizations.declineButton,
+                            ), // Corrected to use getter
                           ),
                           const SizedBox(width: 8),
                           ElevatedButton(
@@ -178,14 +157,14 @@ class NotificationsScreen extends ConsumerWidget {
                                 }
                               }
                             },
-                            child: Text(
-                              appLocalizations.acceptButton,
-                            ), // Corrected to use getter
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Theme.of(
                                 context,
                               ).colorScheme.secondary,
                             ),
+                            child: Text(
+                              appLocalizations.acceptButton,
+                            ), // Corrected to use getter
                           ),
                         ],
                       ),

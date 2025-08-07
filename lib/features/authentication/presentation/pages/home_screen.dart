@@ -43,7 +43,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final authController = ref.read(authControllerProvider.notifier);
-    final user = ref.watch(authStateProvider).value; // Get current user
     final appLocalizations = AppLocalizations.of(context)!;
 
     return Scaffold(

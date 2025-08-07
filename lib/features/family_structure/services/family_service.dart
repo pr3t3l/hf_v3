@@ -10,7 +10,7 @@ import 'package:hf_v3/common/models/user_profile.dart'; // UserProfile model
 
 // Family Structure specific models
 import 'package:hf_v3/features/family_structure/data/models/family.dart'
-    as FamilyModel; // Alias for your Family model
+    as family_model; // Alias for your Family model
 import 'package:hf_v3/features/family_structure/data/models/family_member.dart';
 import 'package:hf_v3/features/family_structure/data/models/invitation.dart';
 import 'package:hf_v3/features/family_structure/data/models/unregistered_member.dart';
@@ -30,7 +30,7 @@ class FamilyService {
   String? get currentUserId => _firebaseAuth.currentUser?.uid;
 
   // --- Family Creation ---
-  Future<FamilyModel.Family> createFamily(String familyName) async {
+  Future<family_model.Family> createFamily(String familyName) async {
     // Use alias here
     if (currentUserId == null) {
       throw Exception("User not authenticated.");
@@ -50,7 +50,7 @@ class FamilyService {
         .doc(); // Firestore generates ID
     final familyId = newFamilyRef.id;
 
-    final newFamily = FamilyModel.Family(
+    final newFamily = family_model.Family(
       // Use alias here
       familyId: familyId,
       familyName: familyName,
@@ -83,7 +83,7 @@ class FamilyService {
   }
 
   // --- Join Family ---
-  Future<FamilyModel.Family> joinFamily(String invitationCode) async {
+  Future<family_model.Family> joinFamily(String invitationCode) async {
     // Use alias here
     if (currentUserId == null) {
       throw Exception("User not authenticated.");
@@ -112,7 +112,7 @@ class FamilyService {
       throw Exception("Family does not exist.");
     }
 
-    final family = FamilyModel.Family.fromFirestore(
+    final family = family_model.Family.fromFirestore(
       familyDoc,
     ); // Use alias here
 
@@ -178,9 +178,34 @@ class FamilyService {
     }
 
     await batch.commit();
-    return FamilyModel.Family.fromFirestore(
+    return family_model.Family.fromFirestore(
       await familyRef.get(),
     ); // Use alias here
+  }
+
+  // --- Fetch Pending Invitations for Current User ---
+  Stream<List<Invitation>> getPendingInvitationsStream() {
+    if (currentUserId == null) {
+      return Stream.value([]);
+    }
+    return _firestore
+        .collection('invitations')
+        .where('invitedUserId', isEqualTo: currentUserId)
+        .where('status', isEqualTo: 'pending')
+        .snapshots()
+        .map((snapshot) =>
+            snapshot.docs.map((doc) => Invitation.fromFirestore(doc)).toList());
+  }
+
+  // --- Decline Invitation ---
+  Future<void> declineInvitation(String invitationId) async {
+    if (currentUserId == null) {
+      throw Exception("User not authenticated.");
+    }
+    await _firestore
+        .collection('invitations')
+        .doc(invitationId)
+        .update({'status': 'declined'});
   }
 
   // --- NEW: Fetch Invitation by Code ---
@@ -222,7 +247,7 @@ class FamilyService {
     if (!familyDoc.exists) {
       throw Exception("Family not found.");
     }
-    final family = FamilyModel.Family.fromFirestore(
+    final family = family_model.Family.fromFirestore(
       familyDoc,
     ); // Use alias here
 
@@ -249,9 +274,6 @@ class FamilyService {
         throw Exception("No registered user found with this email.");
       }
       final invitedUserId = invitedUserQuery.docs.first.id;
-      final invitedUserProfile = UserProfile.fromFirestore(
-        invitedUserQuery.docs.first,
-      ); // This variable is unused, can be removed if not needed for future logic
 
       // Check if already a member
       if (family.memberUserIds.any(
@@ -361,7 +383,7 @@ class FamilyService {
   }
 
   // --- Fetch Family Details ---
-  Stream<FamilyModel.Family> getFamilyStream(String familyId) {
+  Stream<family_model.Family> getFamilyStream(String familyId) {
     // Use alias here
     return _firestore.collection('families').doc(familyId).snapshots().map((
       snapshot,
@@ -369,12 +391,12 @@ class FamilyService {
       if (!snapshot.exists) {
         throw Exception("Family not found.");
       }
-      return FamilyModel.Family.fromFirestore(snapshot); // Use alias here
+      return family_model.Family.fromFirestore(snapshot); // Use alias here
     });
   }
 
   // --- Fetch User's Families ---
-  Stream<List<FamilyModel.Family>> getUserFamiliesStream() {
+  Stream<List<family_model.Family>> getUserFamiliesStream() {
     // Use alias here
     if (currentUserId == null) {
       return Stream.value([]); // Return empty list if not authenticated
@@ -392,7 +414,7 @@ class FamilyService {
             return [];
           }
 
-          final families = <FamilyModel.Family>[]; // Use alias here
+          final families = <family_model.Family>[]; // Use alias here
           for (final familyId in userProfile.familyIds) {
             final familyDoc = await _firestore
                 .collection('families')
@@ -400,7 +422,7 @@ class FamilyService {
                 .get();
             if (familyDoc.exists) {
               families.add(
-                FamilyModel.Family.fromFirestore(familyDoc),
+                family_model.Family.fromFirestore(familyDoc),
               ); // Use alias here
             }
           }
@@ -423,7 +445,7 @@ class FamilyService {
     if (!familyDoc.exists) {
       throw Exception("Family not found.");
     }
-    final family = FamilyModel.Family.fromFirestore(
+    final family = family_model.Family.fromFirestore(
       familyDoc,
     ); // Use alias here
 
@@ -463,7 +485,7 @@ class FamilyService {
     if (!familyDoc.exists) {
       throw Exception("Family not found.");
     }
-    final family = FamilyModel.Family.fromFirestore(
+    final family = family_model.Family.fromFirestore(
       familyDoc,
     ); // Use alias here
 
