@@ -431,4 +431,43 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get confirmPasswordRequired => 'Confirm Password is required.';
+
+  @override
+  String get emailHint => 'Enter email';
+
+  @override
+  String get role_parent => 'Parent';
+
+  @override
+  String get role_child => 'Child';
+
+  @override
+  String get role_guardian => 'Guardian';
+
+  @override
+  String get role_administrator => 'Administrator';
+
+  @override
+  String get relationship_sibling => 'Sibling';
+
+  @override
+  String get relationship_spouse => 'Spouse';
+
+  @override
+  String get relationship_cousin => 'Cousin';
+
+  @override
+  String get relationship_grandparent => 'Grandparent';
+
+  @override
+  String get relationship_other => 'Other';
+
+  @override
+  String get relationship_pet => 'Pet';
+
+  @override
+  String get relationship_deceased => 'Deceased';
 }

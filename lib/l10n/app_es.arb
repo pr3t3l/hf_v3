@@ -245,5 +245,18 @@
     "placeholders": {
       "type": {}
     }
-  }
+  },
+  "confirmPasswordRequired": "Confirmar contraseña es obligatorio.",
+  "emailHint": "Introducir correo electrónico",
+  "role_parent": "Padre/Madre",
+  "role_child": "Hijo/a",
+  "role_guardian": "Tutor/a",
+  "role_administrator": "Administrador/a",
+  "relationship_sibling": "Hermano/a",
+  "relationship_spouse": "Cónyuge",
+  "relationship_cousin": "Primo/a",
+  "relationship_grandparent": "Abuelo/a",
+  "relationship_other": "Otro",
+  "relationship_pet": "Mascota",
+  "relationship_deceased": "Fallecido/a"
 }
