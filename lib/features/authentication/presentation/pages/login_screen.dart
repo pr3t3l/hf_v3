@@ -50,7 +50,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               backgroundColor: Theme.of(
                 context,
               ).colorScheme.error, // Error background color
-              behavior: SnackBarBehavior.floating, // Makes it float above content
+              behavior:
+                  SnackBarBehavior.floating, // Makes it float above content
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ), // Rounded corners
@@ -81,7 +82,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               children: [
                 // App Logo
                 Image.asset(
-                  'assets/images/logo_healthy_families.jpg', // Your logo path
+                  'assets/images/logo.jpg', // Your logo path
                   height: 150, // Adjusted height for prominence
                   width: 150,
                 ),

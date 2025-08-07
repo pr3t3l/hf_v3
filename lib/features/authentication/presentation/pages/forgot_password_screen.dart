@@ -95,7 +95,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               children: [
                 // App Logo
                 Image.asset(
-                  'assets/images/logo_healthy_families.jpg', // Your logo path
+                  'assets/images/logo.jpg', // Your logo path
                   height: 120, // Consistent size
                   width: 120,
                 ),

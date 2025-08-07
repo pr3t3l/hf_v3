@@ -129,7 +129,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               children: [
                 // App Logo
                 Image.asset(
-                  'assets/images/logo_healthy_families.jpg', // Your logo path
+                  'assets/images/logo.jpg', // Your logo path
                   height: 120, // Slightly smaller for registration screen
                   width: 120,
                 ),

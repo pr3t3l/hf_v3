@@ -50,7 +50,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           mainAxisSize: MainAxisSize.min, // To make the row take minimum space
           children: [
             Image.asset(
-              'assets/images/logo_healthy_families.jpg', // Your logo path
+              'assets/images/logo.jpg', // Your logo path
               height: 30, // Smaller for AppBar
               width: 30,
             ),
