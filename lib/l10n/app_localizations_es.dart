@@ -431,4 +431,43 @@ class AppLocalizationsEs extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get confirmPasswordRequired => 'Confirmar contraseña es obligatorio.';
+
+  @override
+  String get emailHint => 'Introducir correo electrónico';
+
+  @override
+  String get role_parent => 'Padre/Madre';
+
+  @override
+  String get role_child => 'Hijo/a';
+
+  @override
+  String get role_guardian => 'Tutor/a';
+
+  @override
+  String get role_administrator => 'Administrador/a';
+
+  @override
+  String get relationship_sibling => 'Hermano/a';
+
+  @override
+  String get relationship_spouse => 'Cónyuge';
+
+  @override
+  String get relationship_cousin => 'Primo/a';
+
+  @override
+  String get relationship_grandparent => 'Abuelo/a';
+
+  @override
+  String get relationship_other => 'Otro';
+
+  @override
+  String get relationship_pet => 'Mascota';
+
+  @override
+  String get relationship_deceased => 'Fallecido/a';
 }
