@@ -257,6 +257,42 @@ abstract class AppLocalizations {
   /// **'This is your personalized family hub.'**
   String get homeDescription;
 
+  /// No description provided for @settingsComingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings coming soon!'**
+  String get settingsComingSoon;
+
+  /// No description provided for @navHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get navHome;
+
+  /// No description provided for @navFamily.
+  ///
+  /// In en, this message translates to:
+  /// **'Family'**
+  String get navFamily;
+
+  /// No description provided for @navJournal.
+  ///
+  /// In en, this message translates to:
+  /// **'Journal'**
+  String get navJournal;
+
+  /// No description provided for @navGames.
+  ///
+  /// In en, this message translates to:
+  /// **'Games'**
+  String get navGames;
+
+  /// No description provided for @navProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get navProfile;
+
   /// No description provided for @familySelectionTitle.
   ///
   /// In en, this message translates to:
@@ -442,12 +478,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Other Family Members'**
   String get unregisteredMembersTitle;
-
-  /// No description provided for @relationshipLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Relationship: {type}'**
-  String relationshipLabel(Object type);
 
   /// No description provided for @confirmDeleteTitle.
   ///
@@ -743,125 +773,23 @@ abstract class AppLocalizations {
   /// **'Error loading notifications: {error}'**
   String errorLoadingNotifications(Object error);
 
-  /// No description provided for @role_parent.
-  ///
-  /// In en, this message translates to:
-  /// **'Parent'**
-  String get role_parent;
-
-  /// No description provided for @role_child.
-  ///
-  /// In en, this message translates to:
-  /// **'Child'**
-  String get role_child;
-
-  /// No description provided for @role_guardian.
-  ///
-  /// In en, this message translates to:
-  /// **'Guardian'**
-  String get role_guardian;
-
-  /// No description provided for @role_administrator.
-  ///
-  /// In en, this message translates to:
-  /// **'Administrator'**
-  String get role_administrator;
-
-  /// No description provided for @relationship_sibling.
-  ///
-  /// In en, this message translates to:
-  /// **'Sibling'**
-  String get relationship_sibling;
-
-  /// No description provided for @relationship_spouse.
-  ///
-  /// In en, this message translates to:
-  /// **'Spouse'**
-  String get relationship_spouse;
-
-  /// No description provided for @relationship_cousin.
-  ///
-  /// In en, this message translates to:
-  /// **'Cousin'**
-  String get relationship_cousin;
-
-  /// No description provided for @relationship_grandparent.
-  ///
-  /// In en, this message translates to:
-  /// **'Grandparent'**
-  String get relationship_grandparent;
-
-  /// No description provided for @relationship_other.
-  ///
-  /// In en, this message translates to:
-  /// **'Other'**
-  String get relationship_other;
-
-  /// No description provided for @relationship_pet.
-  ///
-  /// In en, this message translates to:
-  /// **'Pet'**
-  String get relationship_pet;
-
-  /// No description provided for @relationship_deceased.
-  ///
-  /// In en, this message translates to:
-  /// **'Deceased'**
-  String get relationship_deceased;
-
-  /// No description provided for @settingsComingSoon.
-  ///
-  /// In en, this message translates to:
-  /// **'Settings coming soon!'**
-  String get settingsComingSoon;
-
-  /// No description provided for @navHome.
-  ///
-  /// In en, this message translates to:
-  /// **'Home'**
-  String get navHome;
-
-  /// No description provided for @navFamily.
-  ///
-  /// In en, this message translates to:
-  /// **'Family'**
-  String get navFamily;
-
-  /// No description provided for @navJournal.
-  ///
-  /// In en, this message translates to:
-  /// **'Journal'**
-  String get navJournal;
-
-  /// No description provided for @navGames.
-  ///
-  /// In en, this message translates to:
-  /// **'Games'**
-  String get navGames;
-
-  /// No description provided for @navProfile.
-  ///
-  /// In en, this message translates to:
-  /// **'Profile'**
-  String get navProfile;
-
-  /// No description provided for @confirmPasswordRequired.
-  ///
-  /// In en, this message translates to:
-  /// **'Confirm password is required.'**
-  String get confirmPasswordRequired;
-
-  /// No description provided for @emailHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter email'**
-  String get emailHint;
-
   /// No description provided for @family_name_placeholder.
   ///
   /// In en, this message translates to:
   /// **'Loading family name...'**
   String get family_name_placeholder;
+
+  /// No description provided for @roleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'{type, select, parent{Parent} child{Child} guardian{Guardian} administrator{Administrator} other{Other}}'**
+  String roleLabel(String type);
+
+  /// No description provided for @relationshipLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'{type, select, sibling{Sibling} spouse{Spouse} cousin{Cousin} grandparent{Grandparent} other{Other} pet{Pet} deceased{Deceased}}'**
+  String relationshipLabel(String type);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

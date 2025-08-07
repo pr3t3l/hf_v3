@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hf_v3/l10n/app_localizations.dart';
 import 'package:hf_v3/features/family_structure/presentation/controllers/family_controller.dart';
+// Removed unnecessary import: import 'package:flutter/foundation.dart'; // debugPrint is available via material.dart
 
 class InviteMemberScreen extends ConsumerStatefulWidget {
   final String familyId;
@@ -22,6 +23,7 @@ class _InviteMemberScreenState extends ConsumerState<InviteMemberScreen> {
   bool _isDeceased = false; // For unregistered members
   bool _isPet = false; // For unregistered members
 
+  // Define available roles and relationship types
   final List<String> _roles = ['parent', 'child', 'guardian', 'administrator'];
   final List<String> _relationshipTypes = [
     'sibling',
@@ -39,46 +41,23 @@ class _InviteMemberScreenState extends ConsumerState<InviteMemberScreen> {
     super.dispose();
   }
 
-  String _getRoleTranslation(String role, AppLocalizations localizations) {
-    switch (role) {
-      case 'parent':
-        return localizations.role_parent;
-      case 'child':
-        return localizations.role_child;
-      case 'guardian':
-        return localizations.role_guardian;
-      case 'administrator':
-        return localizations.role_administrator;
-      default:
-        return role; // Fallback
-    }
-  }
-
-  String _getRelationshipTranslation(String type, AppLocalizations localizations) {
-    switch (type) {
-      case 'sibling':
-        return localizations.relationship_sibling;
-      case 'spouse':
-        return localizations.relationship_spouse;
-      case 'cousin':
-        return localizations.relationship_cousin;
-      case 'grandparent':
-        return localizations.relationship_grandparent;
-      case 'other':
-        return localizations.relationship_other;
-      case 'pet':
-        return localizations.relationship_pet;
-      case 'deceased':
-        return localizations.relationship_deceased;
-      default:
-        return type;
-    }
-  }
-
   Future<void> _inviteMember() async {
+    debugPrint('InviteMemberScreen: _inviteMember llamado.');
     if (_formKey.currentState!.validate()) {
+      debugPrint('InviteMemberScreen: Formulario validado.');
       final familyController = ref.read(familyControllerProvider.notifier);
       try {
+        debugPrint(
+          'InviteMemberScreen: Llamando a familyController.inviteMember con los siguientes datos:',
+        );
+        debugPrint('  familyId: ${widget.familyId}');
+        debugPrint('  emailOrName: ${_emailOrNameController.text.trim()}');
+        debugPrint('  isRegisteredUser: $_isRegisteredUser');
+        debugPrint('  initialRole: $_selectedRole');
+        debugPrint('  initialRelationshipType: $_selectedRelationshipType');
+        debugPrint('  isDeceased: $_isDeceased');
+        debugPrint('  isPet: $_isPet');
+
         await familyController.inviteMember(
           widget.familyId,
           _emailOrNameController.text.trim(),
@@ -88,6 +67,10 @@ class _InviteMemberScreenState extends ConsumerState<InviteMemberScreen> {
           isDeceased: _isDeceased,
           isPet: _isPet,
         );
+        debugPrint(
+          'InviteMemberScreen: familyController.inviteMember completado con éxito.',
+        );
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -108,30 +91,39 @@ class _InviteMemberScreenState extends ConsumerState<InviteMemberScreen> {
             ),
           );
           Navigator.of(context).pop(); // Go back to family details
+          debugPrint(
+            'InviteMemberScreen: Navegación de vuelta a FamilyDetailsScreen.',
+          );
         }
       } catch (e) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              _isRegisteredUser
-                  ? AppLocalizations.of(
-                      context,
-                    )!.invitationSentError(e.toString())
-                  : AppLocalizations.of(
-                      context,
-                    )!.memberAddedError(e.toString()),
-              style: TextStyle(color: Theme.of(context).colorScheme.onError),
-            ),
-            backgroundColor: Theme.of(context).colorScheme.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            margin: const EdgeInsets.all(16),
-          ),
+        debugPrint(
+          'InviteMemberScreen: Error al llamar a familyController.inviteMember: $e',
         );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                _isRegisteredUser
+                    ? AppLocalizations.of(
+                        context,
+                      )!.invitationSentError(e.toString())
+                    : AppLocalizations.of(
+                        context,
+                      )!.memberAddedError(e.toString()),
+                style: TextStyle(color: Theme.of(context).colorScheme.onError),
+              ),
+              backgroundColor: Theme.of(context).colorScheme.error,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              margin: const EdgeInsets.all(16),
+            ),
+          );
+        }
       }
+    } else {
+      debugPrint('InviteMemberScreen: Formulario NO validado.');
     }
   }
 
@@ -171,7 +163,8 @@ class _InviteMemberScreenState extends ConsumerState<InviteMemberScreen> {
                         ? appLocalizations.emailLabel
                         : appLocalizations.memberNameLabel,
                     hintText: _isRegisteredUser
-                        ? appLocalizations.emailHint
+                        ? appLocalizations
+                              .emailHint // Corrected to use getter
                         : appLocalizations.memberNameHint,
                   ),
                   keyboardType: _isRegisteredUser
@@ -204,8 +197,8 @@ class _InviteMemberScreenState extends ConsumerState<InviteMemberScreen> {
                       return DropdownMenuItem<String>(
                         value: role,
                         child: Text(
-                          _getRoleTranslation(role, appLocalizations),
-                        ), // Localize roles
+                          appLocalizations.roleLabel(role),
+                        ), // Correctly uses method
                       );
                     }).toList(),
                     onChanged: (String? newValue) {
@@ -234,8 +227,8 @@ class _InviteMemberScreenState extends ConsumerState<InviteMemberScreen> {
                     return DropdownMenuItem<String>(
                       value: type,
                       child: Text(
-                        _getRelationshipTranslation(type, appLocalizations),
-                      ), // Localize relationships
+                        appLocalizations.relationshipLabel(type),
+                      ), // Correctly uses method
                     );
                   }).toList(),
                   onChanged: (String? newValue) {

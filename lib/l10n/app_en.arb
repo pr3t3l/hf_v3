@@ -47,6 +47,13 @@
     }
   },
   "homeDescription": "This is your personalized family hub.",
+  "settingsComingSoon": "Settings coming soon!",
+  "navHome": "Home",
+  "navFamily": "Family",
+  "navJournal": "Journal",
+  "navGames": "Games",
+  "navProfile": "Profile",
+
   "familySelectionTitle": "Family Hub",
   "noFamilyMessage": "You don't belong to any family yet. Create one or join an existing one!",
   "createFamilyButton": "Create New Family",
@@ -65,6 +72,7 @@
       "error": {}
     }
   },
+
   "createFamilyTitle": "Create New Family",
   "createFamilyDescription": "Give your family a name to get started!",
   "familyNameLabel": "Family Name",
@@ -77,6 +85,7 @@
       "error": {}
     }
   },
+
   "joinFamilyTitle": "Join a Family",
   "joinFamilyDescription": "Enter the invitation code you received.",
   "invitationCodeLabel": "Invitation Code",
@@ -110,15 +119,10 @@
       "error": {}
     }
   },
+
   "familyDetailsTitle": "Family Details",
   "registeredMembersTitle": "Registered Members",
   "unregisteredMembersTitle": "Other Family Members",
-  "relationshipLabel": "Relationship: {type}",
-  "@relationshipLabel": {
-    "placeholders": {
-      "type": {}
-    }
-  },
   "confirmDeleteTitle": "Confirm Deletion",
   "confirmDeleteUnregisteredMember": "Are you sure you want to remove {memberName} from this family?",
   "@confirmDeleteUnregisteredMember": {
@@ -143,6 +147,7 @@
       "error": {}
     }
   },
+
   "inviteMemberTitle": "Invite/Add Member",
   "registeredUserToggle": "Invite Registered User (by Email)",
   "memberNameLabel": "Member Name",
@@ -172,6 +177,7 @@
       "error": {}
     }
   },
+
   "manageRolesTitle": "Manage Member Role",
   "manageRoleFor": "Managing role for: {memberName}",
   "@manageRoleFor": {
@@ -196,8 +202,10 @@
       "error": {}
     }
   },
+
   "noFamilySelected": "No family selected",
   "errorLoadingFamiliesShort": "Error loading families.",
+
   "notificationsTitle": "Notifications",
   "noPendingInvitations": "You have no pending family invitations.",
   "invitationReceivedTitle": "New Family Invitation",
@@ -223,24 +231,19 @@
       "error": {}
     }
   },
-  "role_parent": "Parent",
-  "role_child": "Child",
-  "role_guardian": "Guardian",
-  "role_administrator": "Administrator",
-  "relationship_sibling": "Sibling",
-  "relationship_spouse": "Spouse",
-  "relationship_cousin": "Cousin",
-  "relationship_grandparent": "Grandparent",
-  "relationship_other": "Other",
-  "relationship_pet": "Pet",
-  "relationship_deceased": "Deceased",
-  "settingsComingSoon": "Settings coming soon!",
-  "navHome": "Home",
-  "navFamily": "Family",
-  "navJournal": "Journal",
-  "navGames": "Games",
-  "navProfile": "Profile",
-  "confirmPasswordRequired": "Confirm password is required.",
-  "emailHint": "Enter email",
-  "family_name_placeholder": "Loading family name..."
+  "family_name_placeholder": "Loading family name...",
+
+  "roleLabel": "{type, select, parent{Parent} child{Child} guardian{Guardian} administrator{Administrator} other{Other}}",
+  "@roleLabel": {
+    "placeholders": {
+      "type": {}
+    }
+  },
+  "relationshipLabel": "{type, select, sibling{Sibling} spouse{Spouse} cousin{Cousin} grandparent{Grandparent} other{Other} pet{Pet} deceased{Deceased}}",
+  "@relationshipLabel": {
+    "placeholders": {
+      "type": {}
+    }
+  }
 }
+

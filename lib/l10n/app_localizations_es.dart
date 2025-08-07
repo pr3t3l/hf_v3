@@ -98,6 +98,24 @@ class AppLocalizationsEs extends AppLocalizations {
   String get homeDescription => 'Este es tu centro familiar personalizado.';
 
   @override
+  String get settingsComingSoon => '¡Configuración próxima!';
+
+  @override
+  String get navHome => 'Inicio';
+
+  @override
+  String get navFamily => 'Familia';
+
+  @override
+  String get navJournal => 'Diario';
+
+  @override
+  String get navGames => 'Juegos';
+
+  @override
+  String get navProfile => 'Perfil';
+
+  @override
   String get familySelectionTitle => 'Centro Familiar';
 
   @override
@@ -107,7 +125,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get createFamilyButton => 'Crear Nueva Familia';
 
   @override
-  String get joinFamilyButton => 'Unirse a la Familia';
+  String get joinFamilyButton => 'Unirse a Familia';
 
   @override
   String get yourFamiliesTitle => 'Tus Familias';
@@ -209,11 +227,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get unregisteredMembersTitle => 'Otros Miembros de la Familia';
-
-  @override
-  String relationshipLabel(Object type) {
-    return 'Relación: $type';
-  }
 
   @override
   String get confirmDeleteTitle => 'Confirmar Eliminación';
@@ -385,62 +398,37 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get role_parent => 'Padre/Madre';
-
-  @override
-  String get role_child => 'Hijo/a';
-
-  @override
-  String get role_guardian => 'Tutor/a';
-
-  @override
-  String get role_administrator => 'Administrador/a';
-
-  @override
-  String get relationship_sibling => 'Hermano/a';
-
-  @override
-  String get relationship_spouse => 'Cónyuge';
-
-  @override
-  String get relationship_cousin => 'Primo/a';
-
-  @override
-  String get relationship_grandparent => 'Abuelo/a';
-
-  @override
-  String get relationship_other => 'Otro';
-
-  @override
-  String get relationship_pet => 'Mascota';
-
-  @override
-  String get relationship_deceased => 'Fallecido/a';
-
-  @override
-  String get settingsComingSoon => '¡Configuración pronto disponible!';
-
-  @override
-  String get navHome => 'Inicio';
-
-  @override
-  String get navFamily => 'Familia';
-
-  @override
-  String get navJournal => 'Diario';
-
-  @override
-  String get navGames => 'Juegos';
-
-  @override
-  String get navProfile => 'Perfil';
-
-  @override
-  String get confirmPasswordRequired => 'Confirmar contraseña es obligatorio.';
-
-  @override
-  String get emailHint => 'Introduce correo electrónico';
-
-  @override
   String get family_name_placeholder => 'Cargando nombre de familia...';
+
+  @override
+  String roleLabel(String type) {
+    String _temp0 = intl.Intl.selectLogic(
+      type,
+      {
+        'parent': 'Padre/Madre',
+        'child': 'Hijo/a',
+        'guardian': 'Tutor/a',
+        'administrator': 'Administrador/a',
+        'other': 'Otro',
+      },
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String relationshipLabel(String type) {
+    String _temp0 = intl.Intl.selectLogic(
+      type,
+      {
+        'sibling': 'Hermano/a',
+        'spouse': 'Cónyuge',
+        'cousin': 'Primo/a',
+        'grandparent': 'Abuelo/a',
+        'other': 'Otro',
+        'pet': 'Mascota',
+        'deceased': 'Fallecido/a',
+      },
+    );
+    return '$_temp0';
+  }
 }

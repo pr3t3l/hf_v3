@@ -93,9 +93,7 @@ class FamilyDetailsScreen extends ConsumerWidget {
             );
           }
           if (!snapshot.hasData) {
-            return Center(
-              child: Text(appLocalizations.noFamilyMessage),
-            );
+            return Center(child: Text(appLocalizations.noFamilyMessage));
           }
           final family = snapshot.data!;
           final isAdmin = family.adminUserIds.contains(currentUserId);
@@ -179,9 +177,7 @@ class FamilyDetailsScreen extends ConsumerWidget {
                                   : const Icon(Icons.person_outline)),
                         title: Text(member.name),
                         subtitle: Text(
-                           getRelationshipTranslation(
-                            member.relationship,
-                          ),
+                          getRelationshipTranslation(member.relationship),
                         ), // Corrected to use method
                         trailing: isAdmin
                             ? IconButton(

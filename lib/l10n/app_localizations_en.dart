@@ -98,6 +98,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeDescription => 'This is your personalized family hub.';
 
   @override
+  String get settingsComingSoon => 'Settings coming soon!';
+
+  @override
+  String get navHome => 'Home';
+
+  @override
+  String get navFamily => 'Family';
+
+  @override
+  String get navJournal => 'Journal';
+
+  @override
+  String get navGames => 'Games';
+
+  @override
+  String get navProfile => 'Profile';
+
+  @override
   String get familySelectionTitle => 'Family Hub';
 
   @override
@@ -209,11 +227,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get unregisteredMembersTitle => 'Other Family Members';
-
-  @override
-  String relationshipLabel(Object type) {
-    return 'Relationship: $type';
-  }
 
   @override
   String get confirmDeleteTitle => 'Confirm Deletion';
@@ -385,62 +398,37 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get role_parent => 'Parent';
-
-  @override
-  String get role_child => 'Child';
-
-  @override
-  String get role_guardian => 'Guardian';
-
-  @override
-  String get role_administrator => 'Administrator';
-
-  @override
-  String get relationship_sibling => 'Sibling';
-
-  @override
-  String get relationship_spouse => 'Spouse';
-
-  @override
-  String get relationship_cousin => 'Cousin';
-
-  @override
-  String get relationship_grandparent => 'Grandparent';
-
-  @override
-  String get relationship_other => 'Other';
-
-  @override
-  String get relationship_pet => 'Pet';
-
-  @override
-  String get relationship_deceased => 'Deceased';
-
-  @override
-  String get settingsComingSoon => 'Settings coming soon!';
-
-  @override
-  String get navHome => 'Home';
-
-  @override
-  String get navFamily => 'Family';
-
-  @override
-  String get navJournal => 'Journal';
-
-  @override
-  String get navGames => 'Games';
-
-  @override
-  String get navProfile => 'Profile';
-
-  @override
-  String get confirmPasswordRequired => 'Confirm password is required.';
-
-  @override
-  String get emailHint => 'Enter email';
-
-  @override
   String get family_name_placeholder => 'Loading family name...';
+
+  @override
+  String roleLabel(String type) {
+    String _temp0 = intl.Intl.selectLogic(
+      type,
+      {
+        'parent': 'Parent',
+        'child': 'Child',
+        'guardian': 'Guardian',
+        'administrator': 'Administrator',
+        'other': 'Other',
+      },
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String relationshipLabel(String type) {
+    String _temp0 = intl.Intl.selectLogic(
+      type,
+      {
+        'sibling': 'Sibling',
+        'spouse': 'Spouse',
+        'cousin': 'Cousin',
+        'grandparent': 'Grandparent',
+        'other': 'Other',
+        'pet': 'Pet',
+        'deceased': 'Deceased',
+      },
+    );
+    return '$_temp0';
+  }
 }
