@@ -156,8 +156,7 @@ class FamilyService {
     batch.update(invitationDoc.reference, {'status': 'accepted'});
 
     // 4. Create initial family relationship between inviter and invited
-    if (invitation.invitedByUserId != null &&
-        invitation.initialRelationshipType != null) {
+    if (invitation.initialRelationshipType != null) {
       final relationshipId = _uuid.v4();
       batch.set(
         _firestore.collection('familyRelationships').doc(relationshipId),

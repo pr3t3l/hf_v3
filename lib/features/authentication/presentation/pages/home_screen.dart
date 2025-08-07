@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hf_v3/features/authentication/presentation/controllers/auth_controller.dart';
 import 'package:hf_v3/l10n/app_localizations.dart';
-import 'package:hf_v3/providers/auth_provider.dart';
 import 'package:hf_v3/features/family_structure/presentation/pages/family_selection_screen.dart'; // Import FamilySelectionScreen
 import 'package:hf_v3/features/family_structure/presentation/pages/notifications_screen.dart'; // Import NotificationsScreen
 

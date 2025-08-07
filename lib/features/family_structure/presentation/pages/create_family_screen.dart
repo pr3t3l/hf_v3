@@ -47,6 +47,7 @@ class _CreateFamilyScreenState extends ConsumerState<CreateFamilyScreen> {
           Navigator.of(context).pop(); // Go back to family selection screen
         }
       } catch (e) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(

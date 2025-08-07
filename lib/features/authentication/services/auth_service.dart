@@ -46,13 +46,10 @@ class AuthService {
             .set(userProfile.toFirestore());
       }
       return user;
-    } on FirebaseAuthException catch (e) {
-      // Handle specific Firebase Auth errors (e.g., 'email-already-in-use', 'weak-password')
-      print('Error de registro: ${e.code} - ${e.message}');
-      throw e; // Re-throw for UI to handle
-    } catch (e) {
-      print('Error inesperado de registro: $e');
-      throw e;
+    } on FirebaseAuthException {
+      rethrow; // Re-throw for UI to handle
+    } catch (_) {
+      rethrow;
     }
   }
 
@@ -73,13 +70,10 @@ class AuthService {
         });
       }
       return user;
-    } on FirebaseAuthException catch (e) {
-      // Handle sign-in errors (e.g., 'user-not-found', 'wrong-password')
-      print('Error de inicio de sesión: ${e.code} - ${e.message}');
-      throw e;
-    } catch (e) {
-      print('Error inesperado de inicio de sesión: $e');
-      throw e;
+    } on FirebaseAuthException {
+      rethrow;
+    } catch (_) {
+      rethrow;
     }
   }
 
@@ -87,14 +81,10 @@ class AuthService {
   Future<void> sendPasswordResetEmail(String email) async {
     try {
       await _firebaseAuth.sendPasswordResetEmail(email: email);
-    } on FirebaseAuthException catch (e) {
-      print(
-        'Error al enviar correo de restablecimiento: ${e.code} - ${e.message}',
-      );
-      throw e;
-    } catch (e) {
-      print('Error inesperado al restablecer contraseña: $e');
-      throw e;
+    } on FirebaseAuthException {
+      rethrow;
+    } catch (_) {
+      rethrow;
     }
   }
 
@@ -102,9 +92,8 @@ class AuthService {
   Future<void> signOut() async {
     try {
       await _firebaseAuth.signOut();
-    } catch (e) {
-      print('Error al cerrar sesión: $e');
-      throw e;
+    } catch (_) {
+      rethrow;
     }
   }
 

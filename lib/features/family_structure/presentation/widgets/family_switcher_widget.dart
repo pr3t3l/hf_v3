@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hf_v3/l10n/app_localizations.dart';
 import 'package:hf_v3/features/family_structure/presentation/controllers/family_controller.dart';
 import 'package:hf_v3/features/family_structure/data/models/family.dart'
-    as FamilyModel; // Alias for your Family model
+    as family_model; // Alias for your Family model
 
 class FamilySwitcherWidget extends ConsumerWidget {
   const FamilySwitcherWidget({super.key});
@@ -52,7 +52,7 @@ class FamilySwitcherWidget extends ConsumerWidget {
               }
             },
             items: families.map<DropdownMenuItem<String>>((
-              FamilyModel.Family family,
+              family_model.Family family,
             ) {
               // Use alias here
               return DropdownMenuItem<String>(

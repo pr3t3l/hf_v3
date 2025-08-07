@@ -166,8 +166,9 @@ class AppTheme {
         ),
         unselectedLabelStyle: const TextStyle(fontSize: 11),
       ),
-      // Example usage of accentYellow for a specific theme property
-      indicatorColor: accentYellow,
+      tabBarTheme: const TabBarTheme(
+        indicatorColor: accentYellow,
+      ),
     );
   }
 }

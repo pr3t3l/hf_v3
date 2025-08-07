@@ -26,7 +26,7 @@ class AuthWrapper extends ConsumerWidget {
       loading: () => Scaffold(
         backgroundColor: Theme.of(
           context,
-        ).colorScheme.background, // Use theme background color
+        ).colorScheme.surface, // Use theme background color
         body: Center(
           child: CircularProgressIndicator(
             color: Theme.of(
@@ -36,7 +36,7 @@ class AuthWrapper extends ConsumerWidget {
         ),
       ),
       error: (error, stack) => Scaffold(
-        backgroundColor: Theme.of(context).colorScheme.background,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         body: Center(
           child: Text(
             'Error: $error',

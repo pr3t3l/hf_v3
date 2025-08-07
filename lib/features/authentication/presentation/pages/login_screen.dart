@@ -37,27 +37,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           _passwordController.text.trim(),
         );
       } catch (e) {
-        // Guard against BuildContext across async gaps
-        if (!context.mounted) return;
-        // Display error message to the user using SnackBar with theme colors
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              AppLocalizations.of(context)!.loginError(e.toString()),
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onError,
-              ), // Text color on error background
+        if (mounted) {
+          // Display error message to the user using SnackBar with theme colors
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                AppLocalizations.of(context)!.loginError(e.toString()),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onError,
+                ), // Text color on error background
+              ),
+              backgroundColor: Theme.of(
+                context,
+              ).colorScheme.error, // Error background color
+              behavior: SnackBarBehavior.floating, // Makes it float above content
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ), // Rounded corners
+              margin: const EdgeInsets.all(16), // Margin from edges
             ),
-            backgroundColor: Theme.of(
-              context,
-            ).colorScheme.error, // Error background color
-            behavior: SnackBarBehavior.floating, // Makes it float above content
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ), // Rounded corners
-            margin: const EdgeInsets.all(16), // Margin from edges
-          ),
-        );
+          );
+        }
       }
     }
   }

@@ -16,6 +16,43 @@ class FamilyDetailsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final appLocalizations = AppLocalizations.of(context)!;
+
+    String _getRoleTranslation(String role) {
+      switch (role) {
+        case 'parent':
+          return appLocalizations.role_parent;
+        case 'child':
+          return appLocalizations.role_child;
+        case 'guardian':
+          return appLocalizations.role_guardian;
+        case 'administrator':
+          return appLocalizations.role_administrator;
+        default:
+          return role; // Fallback
+      }
+    }
+
+    String _getRelationshipTranslation(String type) {
+      switch (type) {
+        case 'sibling':
+          return appLocalizations.relationship_sibling;
+        case 'spouse':
+          return appLocalizations.relationship_spouse;
+        case 'cousin':
+          return appLocalizations.relationship_cousin;
+        case 'grandparent':
+          return appLocalizations.relationship_grandparent;
+        case 'other':
+          return appLocalizations.relationship_other;
+        case 'pet':
+          return appLocalizations.relationship_pet;
+        case 'deceased':
+          return appLocalizations.relationship_deceased;
+        default:
+          return type;
+      }
+    }
+
     // Stream a single family's details
     final familyAsyncValue = ref
         .watch(familyServiceProvider)
@@ -35,8 +72,32 @@ class FamilyDetailsScreen extends ConsumerWidget {
           // ),
         ],
       ),
-      body: familyAsyncValue.when(
-        data: (family) {
+      body: StreamBuilder(
+        stream: familyAsyncValue,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(
+              child: CircularProgressIndicator(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            );
+          }
+          if (snapshot.hasError) {
+            return Center(
+              child: Text(
+                appLocalizations.errorLoadingFamilyDetails(
+                  snapshot.error.toString(),
+                ), // Corrected to use method
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            );
+          }
+          if (!snapshot.hasData) {
+            return Center(
+              child: Text(appLocalizations.noFamilyMessage),
+            );
+          }
+          final family = snapshot.data!;
           final isAdmin = family.adminUserIds.contains(currentUserId);
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
@@ -67,7 +128,7 @@ class FamilyDetailsScreen extends ConsumerWidget {
                         leading: const Icon(Icons.person),
                         title: Text(member.displayName),
                         subtitle: Text(
-                          appLocalizations.roleLabel(member.role),
+                          _getRoleTranslation(member.role),
                         ), // Corrected to use method
                         trailing:
                             isAdmin &&
@@ -118,7 +179,7 @@ class FamilyDetailsScreen extends ConsumerWidget {
                                   : const Icon(Icons.person_outline)),
                         title: Text(member.name),
                         subtitle: Text(
-                          appLocalizations.relationshipLabel(
+                           _getRelationshipTranslation(
                             member.relationship,
                           ),
                         ), // Corrected to use method
@@ -244,19 +305,6 @@ class FamilyDetailsScreen extends ConsumerWidget {
             ),
           );
         },
-        loading: () => Center(
-          child: CircularProgressIndicator(
-            color: Theme.of(context).colorScheme.primary,
-          ),
-        ),
-        error: (error, stack) => Center(
-          child: Text(
-            appLocalizations.errorLoadingFamilyDetails(
-              error.toString(),
-            ), // Corrected to use method
-            style: TextStyle(color: Theme.of(context).colorScheme.error),
-          ),
-        ),
       ),
     );
   }
