@@ -170,7 +170,7 @@ class NotificationsScreen extends ConsumerWidget {
                                 }
                               }
                             },
-                            style: ElevatedButton.stylefrom(
+                            style: ElevatedButton.styleFrom(
                               backgroundColor: Theme.of(
                                 context,
                               ).colorScheme.secondary,
