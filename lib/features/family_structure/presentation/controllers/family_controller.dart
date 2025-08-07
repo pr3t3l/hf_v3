@@ -37,6 +37,7 @@ class FamilyController extends StateNotifier<AsyncValue<void>> {
       state = const AsyncValue.data(null); // Success
     } catch (e, st) {
       state = AsyncValue.error(e, st);
+      rethrow;
     }
   }
 
@@ -47,6 +48,7 @@ class FamilyController extends StateNotifier<AsyncValue<void>> {
       state = const AsyncValue.data(null); // Success
     } catch (e, st) {
       state = AsyncValue.error(e, st);
+      rethrow;
     }
   }
 
@@ -74,6 +76,7 @@ class FamilyController extends StateNotifier<AsyncValue<void>> {
       state = const AsyncValue.data(null); // Success
     } catch (e, st) {
       state = AsyncValue.error(e, st);
+      rethrow;
     }
   }
 
@@ -88,6 +91,7 @@ class FamilyController extends StateNotifier<AsyncValue<void>> {
       state = const AsyncValue.data(null); // Success
     } catch (e, st) {
       state = AsyncValue.error(e, st);
+      rethrow;
     }
   }
 
@@ -101,6 +105,7 @@ class FamilyController extends StateNotifier<AsyncValue<void>> {
       state = const AsyncValue.data(null); // Success
     } catch (e, st) {
       state = AsyncValue.error(e, st);
+      rethrow;
     }
   }
 }
