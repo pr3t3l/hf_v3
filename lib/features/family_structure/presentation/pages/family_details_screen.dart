@@ -17,7 +17,7 @@ class FamilyDetailsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final appLocalizations = AppLocalizations.of(context)!;
 
-    String _getRoleTranslation(String role) {
+    String getRoleTranslation(String role) {
       switch (role) {
         case 'parent':
           return appLocalizations.role_parent;
@@ -32,7 +32,7 @@ class FamilyDetailsScreen extends ConsumerWidget {
       }
     }
 
-    String _getRelationshipTranslation(String type) {
+    String getRelationshipTranslation(String type) {
       switch (type) {
         case 'sibling':
           return appLocalizations.relationship_sibling;
@@ -128,7 +128,7 @@ class FamilyDetailsScreen extends ConsumerWidget {
                         leading: const Icon(Icons.person),
                         title: Text(member.displayName),
                         subtitle: Text(
-                          _getRoleTranslation(member.role),
+                          getRoleTranslation(member.role),
                         ), // Corrected to use method
                         trailing:
                             isAdmin &&
@@ -179,7 +179,7 @@ class FamilyDetailsScreen extends ConsumerWidget {
                                   : const Icon(Icons.person_outline)),
                         title: Text(member.name),
                         subtitle: Text(
-                           _getRelationshipTranslation(
+                           getRelationshipTranslation(
                             member.relationship,
                           ),
                         ), // Corrected to use method

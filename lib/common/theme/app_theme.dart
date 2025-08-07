@@ -166,7 +166,7 @@ class AppTheme {
         ),
         unselectedLabelStyle: const TextStyle(fontSize: 11),
       ),
-      tabBarTheme: const TabBarTheme(
+      tabBarTheme: const TabBarThemeData(
         indicatorColor: accentYellow,
       ),
     );
