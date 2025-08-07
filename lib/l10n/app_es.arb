@@ -1,0 +1,258 @@
+{
+  "@@locale": "es",
+  "loginTitle": "Iniciar Sesión",
+  "emailLabel": "Correo Electrónico",
+  "passwordLabel": "Contraseña",
+  "loginButton": "Iniciar Sesión",
+  "forgotPasswordButton": "¿Olvidaste tu Contraseña?",
+  "registerButton": "Registrarse",
+  "emailRequired": "El correo electrónico es obligatorio.",
+  "emailInvalid": "Por favor, introduce un correo electrónico válido.",
+  "passwordRequired": "La contraseña es obligatoria.",
+  "loginError": "Error al iniciar sesión: {error}",
+  "@loginError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "registerTitle": "Registrarse",
+  "firstNameLabel": "Nombre",
+  "lastNameLabel": "Apellido",
+  "firstNameRequired": "El nombre es obligatorio.",
+  "lastNameRequired": "El apellido es obligatorio.",
+  "confirmPasswordLabel": "Confirmar Contraseña",
+  "passwordWeak": "La contraseña debe tener al menos 8 caracteres, incluir una mayúscula, un número y un carácter especial.",
+  "passwordMismatch": "Las contraseñas no coinciden.",
+  "registrationSuccess": "¡Registro exitoso! Por favor, inicia sesión.",
+  "registrationError": "Error al registrarse: {error}",
+  "@registrationError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "forgotPasswordTitle": "Olvidé Contraseña",
+  "sendResetLinkButton": "Enviar Enlace de Restablecimiento",
+  "passwordResetEmailSent": "Correo de restablecimiento de contraseña enviado. Revisa tu bandeja de entrada.",
+  "passwordResetError": "Error al restablecer contraseña: {error}",
+  "@passwordResetError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "homeTitle": "Inicio",
+  "welcomeMessage": "¡Bienvenido/a, {userName}!",
+  "@welcomeMessage": {
+    "placeholders": {
+      "userName": {}
+    }
+  },
+  "homeDescription": "Este es tu centro familiar personalizado.",
+
+
+  "familySelectionTitle": "Centro Familiar",
+  "noFamilyMessage": "Aún no perteneces a ninguna familia. ¡Crea una o únete a una existente!",
+  "createFamilyButton": "Crear Nueva Familia",
+  "joinFamilyButton": "Unirse a la Familia",
+  "yourFamiliesTitle": "Tus Familias",
+  "noExistingFamilies": "Aún no te has unido a ninguna familia.",
+  "familyMembersCount": "{count, plural, =1{1 miembro} other{{count} miembros}}",
+  "@familyMembersCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "errorLoadingFamilies": "Error al cargar familias: {error}",
+  "@errorLoadingFamilies": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+
+  "createFamilyTitle": "Crear Nueva Familia",
+  "createFamilyDescription": "¡Dale un nombre a tu familia para empezar!",
+  "familyNameLabel": "Nombre de la Familia",
+  "familyNameHint": "Ej: Los García, Mi Familia Genial",
+  "familyNameRequired": "El nombre de la familia es obligatorio.",
+  "familyCreatedSuccess": "¡Familia creada con éxito!",
+  "familyCreatedError": "Error al crear familia: {error}",
+  "@familyCreatedError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+
+
+  "joinFamilyTitle": "Unirse a una Familia",
+  "joinFamilyDescription": "Introduce el código de invitación que recibiste.",
+  "invitationCodeLabel": "Código de Invitación",
+  "invitationCodeHint": "Ej: ABC123XYZ",
+  "invitationCodeRequired": "El código de invitación es obligatorio.",
+  "invitationCodeInvalidLength": "El código de invitación debe tener 8 caracteres.",
+  "invitationDetailsTitle": "Detalles de la Invitación",
+  "invitationFrom": "De: {inviterName}",
+  "@invitationFrom": {
+    "placeholders": {
+      "inviterName": {}
+    }
+  },
+  "invitationToFamily": "A la Familia: {familyName}",
+  "@invitationToFamily": {
+    "placeholders": {
+      "familyName": {}
+    }
+  },
+  "invitationExpires": "Expira: {date}",
+  "@invitationExpires": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "noInvitationFound": "No se encontró ninguna invitación pendiente válida para este código.",
+  "familyJoinedSuccess": "¡Te has unido a la familia con éxito!",
+  "familyJoinedError": "Error al unirse a la familia: {error}",
+  "@familyJoinedError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+
+
+  "familyDetailsTitle": "Detalles de la Familia",
+  "registeredMembersTitle": "Miembros Registrados",
+  "unregisteredMembersTitle": "Otros Miembros de la Familia",
+  "relationshipLabel": "Relación: {type}",
+  "@relationshipLabel": {
+    "placeholders": {
+      "type": {}
+    }
+  },
+  "confirmDeleteTitle": "Confirmar Eliminación",
+  "confirmDeleteUnregisteredMember": "¿Estás seguro de que quieres eliminar a {memberName} de esta familia?",
+  "@confirmDeleteUnregisteredMember": {
+    "placeholders": {
+      "memberName": {}
+    }
+  },
+  "cancelButton": "Cancelar",
+  "deleteButton": "Eliminar",
+  "memberRemovedSuccess": "Miembro eliminado con éxito.",
+  "memberRemovedError": "Error al eliminar miembro: {error}",
+  "@memberRemovedError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "inviteMemberButton": "Invitar Miembro",
+  "viewFamilyTreeButton": "Ver Árbol Familiar",
+
+  "errorLoadingFamilyDetails": "Error al cargar detalles de la familia: {error}",
+  "@errorLoadingFamilyDetails": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+
+
+  "inviteMemberTitle": "Invitar/Añadir Miembro",
+  "registeredUserToggle": "Invitar Usuario Registrado (por Email)",
+  "memberNameLabel": "Nombre del Miembro",
+  "memberNameHint": "Ej: Abuela Ana, Fido",
+  "memberNameRequired": "El nombre del miembro es obligatorio.",
+  "initialRoleLabel": "Rol Inicial",
+  "selectRoleHint": "Selecciona un rol",
+  "roleRequired": "El rol es obligatorio.",
+  "initialRelationshipLabel": "Tipo de Relación",
+  "selectRelationshipHint": "Selecciona el tipo de relación",
+  "relationshipRequired": "El tipo de relación es obligatorio.",
+  "isDeceasedLabel": "¿Es Fallecido?",
+  "isPetLabel": "¿Es Mascota?",
+  "sendInvitationButton": "Enviar Invitación",
+  "addMemberButton": "Añadir Miembro",
+  "invitationSentSuccess": "¡Invitación enviada con éxito!",
+  "memberAddedSuccess": "¡Miembro añadido con éxito!",
+  "invitationSentError": "Error al enviar invitación: {error}",
+  "@invitationSentError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "memberAddedError": "Error al añadir miembro: {error}",
+  "@memberAddedError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+
+
+  "manageRolesTitle": "Gestionar Rol del Miembro",
+  "manageRoleFor": "Gestionando rol para: {memberName}",
+  "@manageRoleFor": {
+    "placeholders": {
+      "memberName": {}
+    }
+  },
+  "currentRoleLabel": "Rol Actual: {role}",
+  "@currentRoleLabel": {
+    "placeholders": {
+      "role": {}
+    }
+  },
+  "newRoleLabel": "Nuevo Rol",
+  "selectNewRoleHint": "Selecciona nuevo rol",
+  "newRoleRequired": "El nuevo rol es obligatorio.",
+  "updateRoleButton": "Actualizar Rol",
+  "roleUpdatedSuccess": "¡Rol actualizado con éxito!",
+  "roleUpdatedError": "Error al actualizar rol: {error}",
+  "@roleUpdatedError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+
+
+
+  "noFamilySelected": "Ninguna familia seleccionada",
+  "errorLoadingFamiliesShort": "Error al cargar familias.",
+
+
+  "notificationsTitle": "Notificaciones",
+  "noPendingInvitations": "No tienes invitaciones familiares pendientes.",
+  "invitationReceivedTitle": "Nueva Invitación Familiar",
+  "declineButton": "Rechazar",
+  "invitationDeclined": "Invitación rechazada.",
+  "invitationDeclineError": "Error al rechazar invitación: {error}",
+  "@invitationDeclineError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "acceptButton": "Aceptar",
+  "invitationAccepted": "¡Invitación aceptada!",
+  "invitationAcceptError": "Error al aceptar invitación: {error}",
+  "@invitationAcceptError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "errorLoadingNotifications": "Error al cargar notificaciones: {error}",
+  "@errorLoadingNotifications": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+
+
+  "role_parent": "Padre/Madre",
+  "role_child": "Hijo/a",
+  "role_guardian": "Tutor/a",
+  "role_administrator": "Administrador/a",
+
+
+  "relationship_sibling": "Hermano/a",
+  "relationship_spouse": "Cónyuge",
+  "relationship_cousin": "Primo/a",
+  "relationship_grandparent": "Abuelo/a",
+  "relationship_other": "Otro",
+  "relationship_pet": "Mascota",
+  "relationship_deceased": "Fallecido/a"
+}

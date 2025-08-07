@@ -1,0 +1,254 @@
+{
+  "@@locale": "en",
+  "loginTitle": "Login",
+  "emailLabel": "Email",
+  "passwordLabel": "Password",
+  "loginButton": "Sign In",
+  "forgotPasswordButton": "Forgot Password?",
+  "registerButton": "Register",
+  "emailRequired": "Email is required.",
+  "emailInvalid": "Please enter a valid email.",
+  "passwordRequired": "Password is required.",
+  "loginError": "Login failed: {error}",
+  "@loginError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "registerTitle": "Register",
+  "firstNameLabel": "First Name",
+  "lastNameLabel": "Last Name",
+  "firstNameRequired": "First Name is required.",
+  "lastNameRequired": "Last Name is required.",
+  "confirmPasswordLabel": "Confirm Password",
+  "passwordWeak": "Password must be at least 8 characters, include an uppercase letter, a number, and a special character.",
+  "passwordMismatch": "Passwords do not match.",
+  "registrationSuccess": "Registration successful! Please log in.",
+  "registrationError": "Registration failed: {error}",
+  "@registrationError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "forgotPasswordTitle": "Forgot Password",
+  "sendResetLinkButton": "Send Reset Link",
+  "passwordResetEmailSent": "Password reset email sent. Check your inbox.",
+  "passwordResetError": "Password reset failed: {error}",
+  "@passwordResetError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "homeTitle": "Home",
+  "welcomeMessage": "Welcome, {userName}!",
+  "@welcomeMessage": {
+    "placeholders": {
+      "userName": {}
+    }
+  },
+  "homeDescription": "This is your personalized family hub.",
+
+  
+  "familySelectionTitle": "Family Hub",
+  "noFamilyMessage": "You don't belong to any family yet. Create one or join an existing one!",
+  "createFamilyButton": "Create New Family",
+  "joinFamilyButton": "Join Family",
+  "yourFamiliesTitle": "Your Families",
+  "noExistingFamilies": "You haven't joined any families yet.",
+  "familyMembersCount": "{count, plural, =1{1 member} other{{count} members}}",
+  "@familyMembersCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "errorLoadingFamilies": "Error loading families: {error}",
+  "@errorLoadingFamilies": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+
+  "createFamilyTitle": "Create New Family",
+  "createFamilyDescription": "Give your family a name to get started!",
+  "familyNameLabel": "Family Name",
+  "familyNameHint": "e.g., The Smiths, My Awesome Family",
+  "familyNameRequired": "Family name is required.",
+  "familyCreatedSuccess": "Family created successfully!",
+  "familyCreatedError": "Failed to create family: {error}",
+  "@familyCreatedError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+
+  "joinFamilyTitle": "Join a Family",
+  "joinFamilyDescription": "Enter the invitation code you received.",
+  "invitationCodeLabel": "Invitation Code",
+  "invitationCodeHint": "e.g., ABC123XYZ",
+  "invitationCodeRequired": "Invitation code is required.",
+  "invitationCodeInvalidLength": "Invitation code must be 8 characters long.",
+  "invitationDetailsTitle": "Invitation Details",
+  "invitationFrom": "From: {inviterName}",
+  "@invitationFrom": {
+    "placeholders": {
+      "inviterName": {}
+    }
+  },
+  "invitationToFamily": "To Family: {familyName}",
+  "@invitationToFamily": {
+    "placeholders": {
+      "familyName": {}
+    }
+  },
+  "invitationExpires": "Expires: {date}",
+  "@invitationExpires": {
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "noInvitationFound": "No valid pending invitation found for this code.",
+  "familyJoinedSuccess": "Successfully joined the family!",
+  "familyJoinedError": "Failed to join family: {error}",
+  "@familyJoinedError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+
+
+  "familyDetailsTitle": "Family Details",
+  "registeredMembersTitle": "Registered Members",
+  "unregisteredMembersTitle": "Other Family Members",
+  "relationshipLabel": "Relationship: {type}",
+  "@relationshipLabel": {
+    "placeholders": {
+      "type": {}
+    }
+  },
+  "confirmDeleteTitle": "Confirm Deletion",
+  "confirmDeleteUnregisteredMember": "Are you sure you want to remove {memberName} from this family?",
+  "@confirmDeleteUnregisteredMember": {
+    "placeholders": {
+      "memberName": {}
+    }
+  },
+  "cancelButton": "Cancel",
+  "deleteButton": "Delete",
+  "memberRemovedSuccess": "Member removed successfully.",
+  "memberRemovedError": "Failed to remove member: {error}",
+  "@memberRemovedError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "inviteMemberButton": "Invite Member",
+  "viewFamilyTreeButton": "View Family Tree", 
+  "errorLoadingFamilyDetails": "Error loading family details: {error}",
+  "@errorLoadingFamilyDetails": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+
+  "inviteMemberTitle": "Invite/Add Member",
+  "registeredUserToggle": "Invite Registered User (by Email)",
+  "memberNameLabel": "Member Name",
+  "memberNameHint": "e.g., Grandma Ana, Fido",
+  "memberNameRequired": "Member name is required.",
+  "initialRoleLabel": "Initial Role",
+  "selectRoleHint": "Select a role",
+  "roleRequired": "Role is required.",
+  "initialRelationshipLabel": "Relationship Type",
+  "selectRelationshipHint": "Select relationship",
+  "relationshipRequired": "Relationship type is required.",
+  "isDeceasedLabel": "Is Deceased?",
+  "isPetLabel": "Is Pet?",
+  "sendInvitationButton": "Send Invitation",
+  "addMemberButton": "Add Member",
+  "invitationSentSuccess": "Invitation sent successfully!",
+  "memberAddedSuccess": "Member added successfully!",
+  "invitationSentError": "Failed to send invitation: {error}",
+  "@invitationSentError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "memberAddedError": "Failed to add member: {error}",
+  "@memberAddedError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+
+  "manageRolesTitle": "Manage Member Role",
+  "manageRoleFor": "Managing role for: {memberName}",
+  "@manageRoleFor": {
+    "placeholders": {
+      "memberName": {}
+    }
+  },
+  "currentRoleLabel": "Current Role: {role}",
+  "@currentRoleLabel": {
+    "placeholders": {
+      "role": {}
+    }
+  },
+  "newRoleLabel": "New Role",
+  "selectNewRoleHint": "Select new role",
+  "newRoleRequired": "New role is required.",
+  "updateRoleButton": "Update Role",
+  "roleUpdatedSuccess": "Role updated successfully!",
+  "roleUpdatedError": "Failed to update role: {error}",
+  "@roleUpdatedError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+
+
+  "noFamilySelected": "No family selected",
+  "errorLoadingFamiliesShort": "Error loading families.",
+
+
+  "notificationsTitle": "Notifications",
+  "noPendingInvitations": "You have no pending family invitations.",
+  "invitationReceivedTitle": "New Family Invitation",
+  "declineButton": "Decline",
+  "invitationDeclined": "Invitation declined.",
+  "invitationDeclineError": "Failed to decline invitation: {error}",
+  "@invitationDeclineError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "acceptButton": "Accept",
+  "invitationAccepted": "Invitation accepted!",
+  "invitationAcceptError": "Failed to accept invitation: {error}",
+  "@invitationAcceptError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "errorLoadingNotifications": "Error loading notifications: {error}",
+  "@errorLoadingNotifications": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+
+
+  "role_parent": "Parent",
+  "role_child": "Child",
+  "role_guardian": "Guardian",
+  "role_administrator": "Administrator",
+
+  "relationship_sibling": "Sibling",
+  "relationship_spouse": "Spouse",
+  "relationship_cousin": "Cousin",
+  "relationship_grandparent": "Grandparent",
+  "relationship_other": "Other",
+  "relationship_pet": "Pet",
+  "relationship_deceased": "Deceased"
+}
+
+

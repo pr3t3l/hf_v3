@@ -1,0 +1,111 @@
+// hf_v3/lib/features/family_structure/presentation/controllers/family_controller.dart
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hf_v3/features/family_structure/services/family_service.dart';
+import 'package:hf_v3/features/family_structure/data/models/family.dart'
+    as FamilyModel; // Alias for your Family model
+import 'package:hf_v3/features/authentication/services/auth_service.dart'; // To get current user ID
+
+// Provider for FamilyController
+final familyControllerProvider =
+    StateNotifierProvider<FamilyController, AsyncValue<void>>((ref) {
+      final familyService = ref.read(familyServiceProvider);
+      return FamilyController(familyService);
+    });
+
+// Provider to stream the list of families the current user belongs to
+final userFamiliesStreamProvider =
+    StreamProvider.autoDispose<List<FamilyModel.Family>>((ref) {
+      // Use alias here
+      final familyService = ref.watch(familyServiceProvider);
+      return familyService.getUserFamiliesStream();
+    });
+
+// Provider to watch the currently active family
+final activeFamilyProvider = StateProvider<FamilyModel.Family?>(
+  (ref) => null,
+); // Use alias here
+
+class FamilyController extends StateNotifier<AsyncValue<void>> {
+  final FamilyService _familyService;
+
+  FamilyController(this._familyService) : super(const AsyncValue.data(null));
+
+  Future<void> createFamily(String familyName) async {
+    state = const AsyncValue.loading();
+    try {
+      final newFamily = await _familyService.createFamily(familyName);
+      state = const AsyncValue.data(null); // Success
+      // Optionally, set this new family as the active family
+      // ref.read(activeFamilyProvider.notifier).state = newFamily;
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+
+  Future<void> joinFamily(String invitationCode) async {
+    state = const AsyncValue.loading();
+    try {
+      final joinedFamily = await _familyService.joinFamily(invitationCode);
+      state = const AsyncValue.data(null); // Success
+      // Optionally, set this joined family as the active family
+      // ref.read(activeFamilyProvider.notifier).state = joinedFamily;
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+
+  Future<void> inviteMember(
+    String familyId,
+    String emailOrName, {
+    required bool isRegisteredUser,
+    String? initialRole, // Role for registered user if invited
+    String?
+    initialRelationshipType, // Relationship for both registered and unregistered
+    bool isDeceased = false,
+    bool isPet = false,
+  }) async {
+    state = const AsyncValue.loading();
+    try {
+      await _familyService.inviteMember(
+        familyId,
+        emailOrName,
+        isRegisteredUser: isRegisteredUser,
+        initialRole: initialRole,
+        initialRelationshipType: initialRelationshipType,
+        isDeceased: isDeceased,
+        isPet: isPet,
+      );
+      state = const AsyncValue.data(null); // Success
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+
+  Future<void> updateMemberRole(
+    String familyId,
+    String memberUserId,
+    String newRole,
+  ) async {
+    state = const AsyncValue.loading();
+    try {
+      await _familyService.updateMemberRole(familyId, memberUserId, newRole);
+      state = const AsyncValue.data(null); // Success
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+
+  Future<void> removeUnregisteredMember(
+    String familyId,
+    String memberIdToRemove,
+  ) async {
+    state = const AsyncValue.loading();
+    try {
+      await _familyService.removeUnregisteredMember(familyId, memberIdToRemove);
+      state = const AsyncValue.data(null); // Success
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+}
