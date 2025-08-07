@@ -206,6 +206,7 @@ class FamilyService {
     );
 
     // 4. Create initial family relationship between inviter and invited
+    // ignore: unnecessary_null_comparison
     if (invitation.invitedByUserId != null &&
         invitation.initialRelationshipType != null) {
       final relationshipId = _uuid.v4();
