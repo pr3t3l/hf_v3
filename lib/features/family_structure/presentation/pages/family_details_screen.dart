@@ -19,39 +19,13 @@ class FamilyDetailsScreen extends ConsumerWidget {
     final appLocalizations = AppLocalizations.of(context)!;
 
     String getRoleTranslation(String role) {
-      switch (role) {
-        case 'parent':
-          return appLocalizations.role_parent;
-        case 'child':
-          return appLocalizations.role_child;
-        case 'guardian':
-          return appLocalizations.role_guardian;
-        case 'administrator':
-          return appLocalizations.role_administrator;
-        default:
-          return role; // Fallback
-      }
+      final translation = appLocalizations.roleLabel(role);
+      return translation.isNotEmpty ? translation : role;
     }
 
     String getRelationshipTranslation(String type) {
-      switch (type) {
-        case 'sibling':
-          return appLocalizations.relationship_sibling;
-        case 'spouse':
-          return appLocalizations.relationship_spouse;
-        case 'cousin':
-          return appLocalizations.relationship_cousin;
-        case 'grandparent':
-          return appLocalizations.relationship_grandparent;
-        case 'other':
-          return appLocalizations.relationship_other;
-        case 'pet':
-          return appLocalizations.relationship_pet;
-        case 'deceased':
-          return appLocalizations.relationship_deceased;
-        default:
-          return type;
-      }
+      final translation = appLocalizations.relationshipLabel(type);
+      return translation.isNotEmpty ? translation : type;
     }
 
     // Stream a single family's details
