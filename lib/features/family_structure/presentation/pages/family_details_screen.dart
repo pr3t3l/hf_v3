@@ -64,13 +64,55 @@ class FamilyDetailsScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(appLocalizations.familyDetailsTitle),
         actions: [
-          // TODO: Implement "Leave Family" button if desired
-          // IconButton(
-          //   icon: const Icon(Icons.exit_to_app),
-          //   onPressed: () {
-          //     // Logic to leave family
-          //   },
-          // ),
+          IconButton(
+            icon: const Icon(Icons.exit_to_app),
+            tooltip: appLocalizations.leaveFamilyButton,
+            onPressed: () async {
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: Text(appLocalizations.confirmLeaveFamilyTitle),
+                  content: Text(appLocalizations.confirmLeaveFamilyMessage),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(ctx).pop(false),
+                      child: Text(appLocalizations.cancelButton),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(ctx).pop(true),
+                      child: Text(appLocalizations.leaveButton),
+                    ),
+                  ],
+                ),
+              );
+
+              if (confirm != true) return;
+
+              try {
+                await ref
+                    .read(familyControllerProvider.notifier)
+                    .leaveFamily(familyId);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(appLocalizations.leaveFamilySuccess),
+                    ),
+                  );
+                  Navigator.of(context).pop();
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        appLocalizations.leaveFamilyError(e),
+                      ),
+                    ),
+                  );
+                }
+              }
+            },
+          ),
         ],
       ),
       body: StreamBuilder(
