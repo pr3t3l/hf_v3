@@ -803,71 +803,71 @@ abstract class AppLocalizations {
   /// **'Enter email'**
   String get emailHint;
 
-  /// No description provided for @role_parent.
+  /// No description provided for @roleParent.
   ///
   /// In en, this message translates to:
   /// **'Parent'**
-  String get role_parent;
+  String get roleParent;
 
-  /// No description provided for @role_child.
+  /// No description provided for @roleChild.
   ///
   /// In en, this message translates to:
   /// **'Child'**
-  String get role_child;
+  String get roleChild;
 
-  /// No description provided for @role_guardian.
+  /// No description provided for @roleGuardian.
   ///
   /// In en, this message translates to:
   /// **'Guardian'**
-  String get role_guardian;
+  String get roleGuardian;
 
-  /// No description provided for @role_administrator.
+  /// No description provided for @roleAdministrator.
   ///
   /// In en, this message translates to:
   /// **'Administrator'**
-  String get role_administrator;
+  String get roleAdministrator;
 
-  /// No description provided for @relationship_sibling.
+  /// No description provided for @relationshipSibling.
   ///
   /// In en, this message translates to:
   /// **'Sibling'**
-  String get relationship_sibling;
+  String get relationshipSibling;
 
-  /// No description provided for @relationship_spouse.
+  /// No description provided for @relationshipSpouse.
   ///
   /// In en, this message translates to:
   /// **'Spouse'**
-  String get relationship_spouse;
+  String get relationshipSpouse;
 
-  /// No description provided for @relationship_cousin.
+  /// No description provided for @relationshipCousin.
   ///
   /// In en, this message translates to:
   /// **'Cousin'**
-  String get relationship_cousin;
+  String get relationshipCousin;
 
-  /// No description provided for @relationship_grandparent.
+  /// No description provided for @relationshipGrandparent.
   ///
   /// In en, this message translates to:
   /// **'Grandparent'**
-  String get relationship_grandparent;
+  String get relationshipGrandparent;
 
-  /// No description provided for @relationship_other.
+  /// No description provided for @relationshipOther.
   ///
   /// In en, this message translates to:
   /// **'Other'**
-  String get relationship_other;
+  String get relationshipOther;
 
-  /// No description provided for @relationship_pet.
+  /// No description provided for @relationshipPet.
   ///
   /// In en, this message translates to:
   /// **'Pet'**
-  String get relationship_pet;
+  String get relationshipPet;
 
-  /// No description provided for @relationship_deceased.
+  /// No description provided for @relationshipDeceased.
   ///
   /// In en, this message translates to:
   /// **'Deceased'**
-  String get relationship_deceased;
+  String get relationshipDeceased;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

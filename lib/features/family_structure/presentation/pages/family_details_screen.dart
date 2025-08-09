@@ -20,13 +20,13 @@ class FamilyDetailsScreen extends ConsumerWidget {
     String getRoleTranslation(String role) {
       switch (role) {
         case 'parent':
-          return appLocalizations.role_parent;
+          return appLocalizations.roleParent;
         case 'child':
-          return appLocalizations.role_child;
+          return appLocalizations.roleChild;
         case 'guardian':
-          return appLocalizations.role_guardian;
+          return appLocalizations.roleGuardian;
         case 'administrator':
-          return appLocalizations.role_administrator;
+          return appLocalizations.roleAdministrator;
         default:
           return role; // Fallback
       }
@@ -35,19 +35,19 @@ class FamilyDetailsScreen extends ConsumerWidget {
     String getRelationshipTranslation(String type) {
       switch (type) {
         case 'sibling':
-          return appLocalizations.relationship_sibling;
+          return appLocalizations.relationshipSibling;
         case 'spouse':
-          return appLocalizations.relationship_spouse;
+          return appLocalizations.relationshipSpouse;
         case 'cousin':
-          return appLocalizations.relationship_cousin;
+          return appLocalizations.relationshipCousin;
         case 'grandparent':
-          return appLocalizations.relationship_grandparent;
+          return appLocalizations.relationshipGrandparent;
         case 'other':
-          return appLocalizations.relationship_other;
+          return appLocalizations.relationshipOther;
         case 'pet':
-          return appLocalizations.relationship_pet;
+          return appLocalizations.relationshipPet;
         case 'deceased':
-          return appLocalizations.relationship_deceased;
+          return appLocalizations.relationshipDeceased;
         default:
           return type;
       }

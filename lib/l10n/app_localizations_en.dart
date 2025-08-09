@@ -439,35 +439,35 @@ class AppLocalizationsEn extends AppLocalizations {
   String get emailHint => 'Enter email';
 
   @override
-  String get role_parent => 'Parent';
+  String get roleParent => 'Parent';
 
   @override
-  String get role_child => 'Child';
+  String get roleChild => 'Child';
 
   @override
-  String get role_guardian => 'Guardian';
+  String get roleGuardian => 'Guardian';
 
   @override
-  String get role_administrator => 'Administrator';
+  String get roleAdministrator => 'Administrator';
 
   @override
-  String get relationship_sibling => 'Sibling';
+  String get relationshipSibling => 'Sibling';
 
   @override
-  String get relationship_spouse => 'Spouse';
+  String get relationshipSpouse => 'Spouse';
 
   @override
-  String get relationship_cousin => 'Cousin';
+  String get relationshipCousin => 'Cousin';
 
   @override
-  String get relationship_grandparent => 'Grandparent';
+  String get relationshipGrandparent => 'Grandparent';
 
   @override
-  String get relationship_other => 'Other';
+  String get relationshipOther => 'Other';
 
   @override
-  String get relationship_pet => 'Pet';
+  String get relationshipPet => 'Pet';
 
   @override
-  String get relationship_deceased => 'Deceased';
+  String get relationshipDeceased => 'Deceased';
 }
