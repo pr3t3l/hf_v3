@@ -31,13 +31,18 @@ class NotificationsScreen extends ConsumerWidget {
     ); // Get FamilyService to fetch family names
 
     return Scaffold(
-      appBar: AppBar(title: Text(appLocalizations.notificationsTitle)),
+      appBar: AppBar(
+        title: Text(
+          appLocalizations.notificationsTitle,
+        ), // Corrected to use getter
+      ),
       body: pendingInvitationsAsyncValue.when(
         data: (invitations) {
           if (invitations.isEmpty) {
             return Center(
               child: Text(
-                appLocalizations.noPendingInvitations,
+                appLocalizations
+                    .noPendingInvitations, // Corrected to use getter
                 style: Theme.of(context).textTheme.titleMedium,
                 textAlign: TextAlign.center,
               ),
@@ -74,12 +79,16 @@ class NotificationsScreen extends ConsumerWidget {
                           if (snapshot.connectionState ==
                               ConnectionState.waiting) {
                             return Text(
-                              appLocalizations.invitationToFamily('...'),
+                              appLocalizations.invitationToFamily(
+                                appLocalizations.family_name_placeholder,
+                              ),
                             ); // Placeholder while loading
                           } else if (snapshot.hasError) {
                             return Text(
-                              appLocalizations.invitationToFamily('Error'),
-                            );
+                              appLocalizations.invitationToFamily(
+                                appLocalizations.errorLoadingFamiliesShort,
+                              ),
+                            ); // Use a more general error message
                           } else {
                             return Text(
                               appLocalizations.invitationToFamily(
@@ -98,6 +107,18 @@ class NotificationsScreen extends ConsumerWidget {
                               .split(' ')[0],
                         ),
                       ),
+
+                      // --- CAMBIO CLAVE AQUÍ: Mostrar el tipo de relación ---
+                      if (invitation.initialRelationshipType != null)
+                        Text(
+                          appLocalizations.invitationRelationship(
+                            appLocalizations.relationshipLabel(
+                              invitation.initialRelationshipType!,
+                            ),
+                          ),
+                        ),
+
+                      // ----------------------------------------------------
                       const SizedBox(height: 16),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
@@ -108,7 +129,7 @@ class NotificationsScreen extends ConsumerWidget {
                                 if (!context.mounted) return;
                                 await familyService.declineInvitation(
                                   invitation.invitationId,
-                                ); // Use new method
+                                );
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
@@ -132,12 +153,12 @@ class NotificationsScreen extends ConsumerWidget {
                                 }
                               }
                             },
+                            child: Text(appLocalizations.declineButton),
                             style: TextButton.styleFrom(
                               foregroundColor: Theme.of(
                                 context,
                               ).colorScheme.error,
                             ),
-                            child: Text(appLocalizations.declineButton),
                           ),
                           const SizedBox(width: 8),
                           ElevatedButton(
@@ -170,12 +191,12 @@ class NotificationsScreen extends ConsumerWidget {
                                 }
                               }
                             },
+                            child: Text(appLocalizations.acceptButton),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Theme.of(
                                 context,
                               ).colorScheme.secondary,
                             ),
-                            child: Text(appLocalizations.acceptButton),
                           ),
                         ],
                       ),
@@ -201,4 +222,3 @@ class NotificationsScreen extends ConsumerWidget {
     );
   }
 }
-//good

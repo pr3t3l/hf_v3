@@ -81,7 +81,7 @@ export const inviteFamilyMember = onCall<InviteMemberData>(async (request: Calla
     // --- Invitar usuario registrado existente por email ---
     const invitedUserQuery = await db
       .collection("users")
-      .where("email", "==", emailOrName)
+      .where("email", "==", emailOrName.toLowerCase()) // Convertir a minúsculas
       .limit(1)
       .get();
 

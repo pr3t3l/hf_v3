@@ -53,7 +53,6 @@
   "navJournal": "Diario",
   "navGames": "Juegos",
   "navProfile": "Perfil",
-
   "familySelectionTitle": "Centro Familiar",
   "noFamilyMessage": "Aún no perteneces a ninguna familia. ¡Crea una o únete a una existente!",
   "createFamilyButton": "Crear Nueva Familia",
@@ -72,7 +71,6 @@
       "error": {}
     }
   },
-
   "createFamilyTitle": "Crear Nueva Familia",
   "createFamilyDescription": "¡Dale un nombre a tu familia para empezar!",
   "familyNameLabel": "Nombre de la Familia",
@@ -85,7 +83,6 @@
       "error": {}
     }
   },
-
   "joinFamilyTitle": "Unirse a una Familia",
   "joinFamilyDescription": "Introduce el código de invitación que recibiste.",
   "invitationCodeLabel": "Código de Invitación",
@@ -119,7 +116,6 @@
       "error": {}
     }
   },
-
   "familyDetailsTitle": "Detalles de la Familia",
   "registeredMembersTitle": "Miembros Registrados",
   "unregisteredMembersTitle": "Otros Miembros de la Familia",
@@ -152,14 +148,12 @@
   },
   "inviteMemberButton": "Invitar Miembro",
   "viewFamilyTreeButton": "Ver Árbol Familiar",
-
   "errorLoadingFamilyDetails": "Error al cargar detalles de la familia: {error}",
   "@errorLoadingFamilyDetails": {
     "placeholders": {
       "error": {}
     }
   },
-
   "inviteMemberTitle": "Invitar/Añadir Miembro",
   "registeredUserToggle": "Invitar Usuario Registrado (por Email)",
   "memberNameLabel": "Nombre del Miembro",
@@ -189,7 +183,6 @@
       "error": {}
     }
   },
-
   "manageRolesTitle": "Gestionar Rol del Miembro",
   "manageRoleFor": "Gestionando rol para: {memberName}",
   "@manageRoleFor": {
@@ -214,10 +207,8 @@
       "error": {}
     }
   },
-
   "noFamilySelected": "Ninguna familia seleccionada",
   "errorLoadingFamiliesShort": "Error al cargar familias.",
-
   "notificationsTitle": "Notificaciones",
   "noPendingInvitations": "No tienes invitaciones familiares pendientes.",
   "invitationReceivedTitle": "Nueva Invitación Familiar",
@@ -244,7 +235,6 @@
     }
   },
   "family_name_placeholder": "Cargando nombre de familia...",
-
   "roleLabel": "{type, select, parent{Padre/Madre} child{Hijo/a} guardian{Tutor/a} administrator{Administrador/a} other{Otro}}",
   "@roleLabel": {
     "placeholders": {
@@ -257,17 +247,12 @@
       "type": {}
     }
   },
+  "invitationRelationship": "Relación: {relationshipType}",
+  "@invitationRelationship": {
+    "placeholders": {
+      "relationshipType": {}
+    }
+  },
   "confirmPasswordRequired": "Confirmar contraseña es obligatorio.",
-  "emailHint": "Introducir correo electrónico",
-  "role_parent": "Padre/Madre",
-  "role_child": "Hijo/a",
-  "role_guardian": "Tutor/a",
-  "role_administrator": "Administrador/a",
-  "relationship_sibling": "Hermano/a",
-  "relationship_spouse": "Cónyuge",
-  "relationship_cousin": "Primo/a",
-  "relationship_grandparent": "Abuelo/a",
-  "relationship_other": "Otro",
-  "relationship_pet": "Mascota",
-  "relationship_deceased": "Fallecido/a"
+  "emailHint": "Introduce correo electrónico"
 }
