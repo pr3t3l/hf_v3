@@ -10,24 +10,8 @@ class FamilyTreeScreen extends StatelessWidget {
 
   String _translateRelationship(BuildContext context, String type) {
     final appLocalizations = AppLocalizations.of(context)!;
-    switch (type) {
-      case 'sibling':
-        return appLocalizations.relationship_sibling;
-      case 'spouse':
-        return appLocalizations.relationship_spouse;
-      case 'cousin':
-        return appLocalizations.relationship_cousin;
-      case 'grandparent':
-        return appLocalizations.relationship_grandparent;
-      case 'other':
-        return appLocalizations.relationship_other;
-      case 'pet':
-        return appLocalizations.relationship_pet;
-      case 'deceased':
-        return appLocalizations.relationship_deceased;
-      default:
-        return type;
-    }
+    final translation = appLocalizations.relationshipLabel(type);
+    return translation.isNotEmpty ? translation : type;
   }
 
   Widget _buildNode(String text) {
@@ -94,10 +78,12 @@ class FamilyTreeScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildNode(family.familyName),
-            _buildSection(context, appLocalizations.role_parent, parents),
-            _buildSection(context, appLocalizations.role_child, children),
-            _buildSection(context, appLocalizations.role_guardian, guardians),
-            _buildSection(context, appLocalizations.role_administrator, administrators),
+            _buildSection(context, appLocalizations.roleLabel('parent'), parents),
+            _buildSection(context, appLocalizations.roleLabel('child'), children),
+            _buildSection(
+                context, appLocalizations.roleLabel('guardian'), guardians),
+            _buildSection(context, appLocalizations.roleLabel('administrator'),
+                administrators),
             _buildSection(context, appLocalizations.unregisteredMembersTitle, unregistered),
           ],
         ),
