@@ -516,4 +516,60 @@ class FamilyService {
       rethrow;
     }
   }
+
+  // --- Leave Family ---
+  Future<void> leaveFamily(String familyId) async {
+    debugPrint('FamilyService: Iniciando leaveFamily para familyId: $familyId');
+    final userId = currentUserId;
+    if (userId == null) {
+      debugPrint('FamilyService: Error - Usuario no autenticado.');
+      throw Exception('User not authenticated.');
+    }
+
+    final familyRef = _firestore.collection('families').doc(familyId);
+    final familyDoc = await familyRef.get();
+    if (!familyDoc.exists) {
+      debugPrint('FamilyService: Error - Familia no encontrada.');
+      throw Exception('Family not found.');
+    }
+
+    final family = family_model.Family.fromFirestore(familyDoc);
+    debugPrint('FamilyService: Familia cargada: ${family.familyName}');
+
+    if (!family.memberUserIds.any((m) => m.userId == userId)) {
+      debugPrint('FamilyService: Error - Usuario no es miembro de la familia.');
+      throw Exception('User is not a member of this family.');
+    }
+
+    final updatedMembers =
+        family.memberUserIds.where((m) => m.userId != userId).toList();
+    final updatedAdmins =
+        family.adminUserIds.where((id) => id != userId).toList();
+
+    if (family.adminUserIds.contains(userId) &&
+        updatedAdmins.isEmpty &&
+        updatedMembers.isNotEmpty) {
+      debugPrint(
+        'FamilyService: Error - Último administrador no puede salir.',
+      );
+      throw Exception('Cannot leave the family as the only administrator.');
+    }
+
+    final batch = _firestore.batch();
+    batch.update(familyRef, {
+      'memberUserIds': updatedMembers.map((m) => m.toFirestore()).toList(),
+      'adminUserIds': updatedAdmins,
+    });
+    batch.update(_firestore.collection('users').doc(userId), {
+      'familyIds': FieldValue.arrayRemove([familyId]),
+    });
+
+    try {
+      await batch.commit();
+      debugPrint('FamilyService: Usuario eliminado de la familia.');
+    } catch (e) {
+      debugPrint('FamilyService: Error al salir de la familia: $e');
+      rethrow;
+    }
+  }
 }
