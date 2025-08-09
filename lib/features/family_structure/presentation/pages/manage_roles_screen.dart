@@ -40,18 +40,8 @@ class _ManageRolesScreenState extends ConsumerState<ManageRolesScreen> {
   }
 
   String _getRoleTranslation(String role, AppLocalizations localizations) {
-    switch (role) {
-      case 'parent':
-        return localizations.role_parent;
-      case 'child':
-        return localizations.role_child;
-      case 'guardian':
-        return localizations.role_guardian;
-      case 'administrator':
-        return localizations.role_administrator;
-      default:
-        return role; // Fallback
-    }
+    final translation = localizations.roleLabel(role);
+    return translation.isNotEmpty ? translation : role;
   }
 
   Future<void> _updateRole() async {
