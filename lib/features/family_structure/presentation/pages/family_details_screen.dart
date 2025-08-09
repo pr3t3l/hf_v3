@@ -8,6 +8,7 @@ import 'package:hf_v3/features/family_structure/presentation/controllers/family_
 import 'package:hf_v3/features/family_structure/presentation/pages/invite_member_screen.dart';
 import 'package:hf_v3/features/family_structure/presentation/pages/manage_roles_screen.dart';
 import 'package:hf_v3/features/family_structure/services/family_service.dart'; // Needed for currentUserId
+import 'package:hf_v3/features/family_structure/presentation/pages/family_tree_screen.dart';
 
 class FamilyDetailsScreen extends ConsumerWidget {
   final String familyId;
@@ -63,13 +64,55 @@ class FamilyDetailsScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(appLocalizations.familyDetailsTitle),
         actions: [
-          // TODO: Implement "Leave Family" button if desired
-          // IconButton(
-          //   icon: const Icon(Icons.exit_to_app),
-          //   onPressed: () {
-          //     // Logic to leave family
-          //   },
-          // ),
+          IconButton(
+            icon: const Icon(Icons.exit_to_app),
+            tooltip: appLocalizations.leaveFamilyButton,
+            onPressed: () async {
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: Text(appLocalizations.confirmLeaveFamilyTitle),
+                  content: Text(appLocalizations.confirmLeaveFamilyMessage),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(ctx).pop(false),
+                      child: Text(appLocalizations.cancelButton),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(ctx).pop(true),
+                      child: Text(appLocalizations.leaveButton),
+                    ),
+                  ],
+                ),
+              );
+
+              if (confirm != true) return;
+
+              try {
+                await ref
+                    .read(familyControllerProvider.notifier)
+                    .leaveFamily(familyId);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(appLocalizations.leaveFamilySuccess),
+                    ),
+                  );
+                  Navigator.of(context).pop();
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        appLocalizations.leaveFamilyError(e),
+                      ),
+                    ),
+                  );
+                }
+              }
+            },
+          ),
         ],
       ),
       body: StreamBuilder(
@@ -288,13 +331,17 @@ class FamilyDetailsScreen extends ConsumerWidget {
                         child: Text(appLocalizations.inviteMemberButton),
                       ),
                       const SizedBox(height: 16),
-                      // TODO: Implement Family Tree View (Future Vision)
-                      // ElevatedButton(
-                      //   onPressed: () {
-                      //     // Navigate to Family Tree Screen
-                      //   },
-                      //   child: Text(appLocalizations.viewFamilyTreeButton),
-                      // ),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  FamilyTreeScreen(family: family),
+                            ),
+                          );
+                        },
+                        child: Text(appLocalizations.viewFamilyTreeButton),
+                      ),
                     ],
                   ),
               ],

@@ -1,22 +1,27 @@
 // hf_v3/lib/features/authentication/presentation/pages/user_profile_screen.dart
 
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:hf_v3/features/authentication/presentation/pages/forgot_password_screen.dart';
+
 
 class UserProfileScreen extends StatelessWidget {
   const UserProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+
     final user = FirebaseAuth.instance.currentUser;
+
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Perfil'),
         centerTitle: true,
       ),
+
       body: user == null
           ? const Center(child: Text('No hay usuario autenticado'))
           : FutureBuilder<
@@ -72,6 +77,7 @@ class UserProfileScreen extends StatelessWidget {
                 );
               },
             ),
+
     );
   }
 }
