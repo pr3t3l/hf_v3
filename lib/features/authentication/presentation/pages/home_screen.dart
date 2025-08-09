@@ -6,6 +6,7 @@ import 'package:hf_v3/features/authentication/presentation/controllers/auth_cont
 import 'package:hf_v3/l10n/app_localizations.dart';
 import 'package:hf_v3/features/family_structure/presentation/pages/family_selection_screen.dart'; // Import FamilySelectionScreen
 import 'package:hf_v3/features/family_structure/presentation/pages/notifications_screen.dart'; // Import NotificationsScreen
+import 'package:hf_v3/features/authentication/presentation/pages/user_profile_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -28,9 +29,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       child: Text('Diario (Próximamente)'),
     ), // Placeholder for Journal
     const Center(child: Text('Juegos (Próximamente)')), // Placeholder for Games
-    const Center(
-      child: Text('Perfil (Próximamente)'),
-    ), // Placeholder for Profile
+    const UserProfileScreen(), // Profile module
   ];
 
   void _onItemTapped(int index) {
@@ -78,9 +77,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               Icons.settings,
             ), // Placeholder for profile image/settings
             onPressed: () {
-              // TODO: Navigate to User Profile/Settings Screen
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(appLocalizations.settingsComingSoon)),
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const UserProfileScreen(),
+                ),
               );
             },
             color: Theme.of(context).appBarTheme.foregroundColor,
