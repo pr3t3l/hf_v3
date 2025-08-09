@@ -139,6 +139,7 @@ export const inviteFamilyMember = functions.https.onCall(async (data: InviteMemb
 
     // TODO: Aquí se podría integrar el envío de correo electrónico (ej. con SendGrid)
     // functions.logger.info(`Invitation created for ${emailOrName} with code: ${invitationCode}`);
+    await batch.commit();
 
     return { status: "success", message: "Invitación enviada con éxito." };
   } else {
