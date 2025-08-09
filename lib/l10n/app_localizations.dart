@@ -443,6 +443,12 @@ abstract class AppLocalizations {
   /// **'Expires: {date}'**
   String invitationExpires(Object date);
 
+  /// No description provided for @invitationRelationship.
+  ///
+  /// In en, this message translates to:
+  /// **'Relationship: {relationship}'**
+  String invitationRelationship(Object relationship);
+
   /// No description provided for @noInvitationFound.
   ///
   /// In en, this message translates to:

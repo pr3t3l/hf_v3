@@ -98,6 +98,12 @@ class NotificationsScreen extends ConsumerWidget {
                               .split(' ')[0],
                         ),
                       ),
+                      if (invitation.initialRelationshipType != null)
+                        Text(
+                          appLocalizations.invitationRelationship(
+                            invitation.initialRelationshipType!,
+                          ),
+                        ),
                       const SizedBox(height: 16),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,

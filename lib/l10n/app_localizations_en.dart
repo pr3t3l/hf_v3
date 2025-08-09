@@ -209,6 +209,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String invitationRelationship(Object relationship) {
+    return 'Relationship: $relationship';
+  }
+
+  @override
   String get noInvitationFound => 'No valid pending invitation found for this code.';
 
   @override

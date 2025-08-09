@@ -111,6 +111,12 @@
       "date": {}
     }
   },
+  "invitationRelationship": "Parentesco: {relationship}",
+  "@invitationRelationship": {
+    "placeholders": {
+      "relationship": {}
+    }
+  },
   "noInvitationFound": "No se encontró ninguna invitación pendiente válida para este código.",
   "familyJoinedSuccess": "¡Te has unido a la familia con éxito!",
   "familyJoinedError": "Error al unirse a la familia: {error}",
