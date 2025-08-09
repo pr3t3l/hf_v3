@@ -3,6 +3,8 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import { v4 as uuidv4 } from "uuid"; // Necesitarás instalar 'uuid' y '@types/uuid'
+// Importación específica para CallableContext en funciones v2
+import { CallableContext } from "firebase-functions/lib/common/providers/https"; // <--- CAMBIO CLAVE AQUÍ
 
 // Inicializa el SDK de Admin de Firebase
 admin.initializeApp();
@@ -20,19 +22,19 @@ interface InviteMemberData {
 }
 
 // Función Callable para invitar a miembros a una familia
-export const inviteFamilyMember = functions.https.onCall(async (data: InviteMemberData, context: functions.https.CallableContext) => { // Explicitly type context
+export const inviteFamilyMember = functions.https.onCall(async (request: functions.https.CallableRequest<InviteMemberData>, context: CallableContext) => { // Usamos el tipo importado
   // 1. Autenticación y Verificación de Administrador
   // Asegurarse de que el contexto de autenticación existe y el usuario está logueado
-  if (!context.auth || !context.auth.uid) { // Check both context.auth and context.auth.uid
+  if (!context.auth || !context.auth.uid) {
     throw new functions.https.HttpsError(
       "unauthenticated",
       "La solicitud debe estar autenticada."
     );
   }
 
-  const currentUserId = context.auth.uid; // Now safe to access uid
+  const currentUserId = context.auth.uid;
   
-  // Extraer datos del payload de forma segura
+  // Extraer datos del payload de forma segura desde request.data
   const {
     familyId,
     emailOrName,
@@ -41,7 +43,7 @@ export const inviteFamilyMember = functions.https.onCall(async (data: InviteMemb
     initialRelationshipType,
     isDeceased = false, // Asignar valor por defecto para evitar undefined
     isPet = false,      // Asignar valor por defecto para evitar undefined
-  } = data; // TypeScript ahora sabe la estructura de 'data' gracias a la interfaz
+  } = request.data; // Accedemos a los datos a través de request.data
 
   if (!familyId || !emailOrName) {
     throw new functions.https.HttpsError(
