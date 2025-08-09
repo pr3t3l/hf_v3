@@ -209,8 +209,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String invitationRelationship(Object relationship) {
-    return 'Relationship: $relationship';
+  String invitationRelationship(Object relationshipType) {
+    return 'Relationship: $relationshipType';
   }
 
   @override
@@ -262,8 +262,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get confirmLeaveFamilyTitle => 'Confirm Leave';
 
   @override
-  String get confirmLeaveFamilyMessage =>
-      'Are you sure you want to leave this family?';
+  String get confirmLeaveFamilyMessage => 'Are you sure you want to leave this family?';
 
   @override
   String get leaveButton => 'Leave';
@@ -463,37 +462,4 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get emailHint => 'Enter email';
-
-  @override
-  String get role_parent => 'Parent';
-
-  @override
-  String get role_child => 'Child';
-
-  @override
-  String get role_guardian => 'Guardian';
-
-  @override
-  String get role_administrator => 'Administrator';
-
-  @override
-  String get relationship_sibling => 'Sibling';
-
-  @override
-  String get relationship_spouse => 'Spouse';
-
-  @override
-  String get relationship_cousin => 'Cousin';
-
-  @override
-  String get relationship_grandparent => 'Grandparent';
-
-  @override
-  String get relationship_other => 'Other';
-
-  @override
-  String get relationship_pet => 'Pet';
-
-  @override
-  String get relationship_deceased => 'Deceased';
 }
