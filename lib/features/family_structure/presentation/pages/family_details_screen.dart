@@ -8,6 +8,7 @@ import 'package:hf_v3/features/family_structure/presentation/controllers/family_
 import 'package:hf_v3/features/family_structure/presentation/pages/invite_member_screen.dart';
 import 'package:hf_v3/features/family_structure/presentation/pages/manage_roles_screen.dart';
 import 'package:hf_v3/features/family_structure/services/family_service.dart'; // Needed for currentUserId
+import 'package:hf_v3/features/family_structure/presentation/pages/family_tree_screen.dart';
 
 class FamilyDetailsScreen extends ConsumerWidget {
   final String familyId;
@@ -110,6 +111,7 @@ class FamilyDetailsScreen extends ConsumerWidget {
             icon: const Icon(Icons.exit_to_app),
             tooltip: appLocalizations.leaveFamilyButton,
             onPressed: handleLeaveFamily,
+
           ),
         ],
       ),
@@ -329,13 +331,17 @@ class FamilyDetailsScreen extends ConsumerWidget {
                         child: Text(appLocalizations.inviteMemberButton),
                       ),
                       const SizedBox(height: 16),
-                      // TODO: Implement Family Tree View (Future Vision)
-                      // ElevatedButton(
-                      //   onPressed: () {
-                      //     // Navigate to Family Tree Screen
-                      //   },
-                      //   child: Text(appLocalizations.viewFamilyTreeButton),
-                      // ),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  FamilyTreeScreen(family: family),
+                            ),
+                          );
+                        },
+                        child: Text(appLocalizations.viewFamilyTreeButton),
+                      ),
                     ],
                   ),
                 const SizedBox(height: 24),
