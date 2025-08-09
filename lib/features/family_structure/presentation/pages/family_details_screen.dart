@@ -55,10 +55,53 @@ class FamilyDetailsScreen extends ConsumerWidget {
     }
 
     // Stream a single family's details
-    final familyAsyncValue = ref
-        .watch(familyServiceProvider)
-        .getFamilyStream(familyId);
+    final familyAsyncValue =
+        ref.watch(familyServiceProvider).getFamilyStream(familyId);
     final currentUserId = ref.watch(familyServiceProvider).currentUserId;
+
+    Future<void> handleLeaveFamily() async {
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(appLocalizations.confirmLeaveFamilyTitle),
+          content: Text(appLocalizations.confirmLeaveFamilyMessage),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: Text(appLocalizations.cancelButton),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: Text(appLocalizations.leaveButton),
+            ),
+          ],
+        ),
+      );
+
+      if (confirm != true) return;
+
+      try {
+        await ref.read(familyControllerProvider.notifier).leaveFamily(familyId);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(appLocalizations.leaveFamilySuccess),
+            ),
+          );
+          Navigator.of(context).pop();
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                appLocalizations.leaveFamilyError(e),
+              ),
+            ),
+          );
+        }
+      }
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -67,51 +110,8 @@ class FamilyDetailsScreen extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.exit_to_app),
             tooltip: appLocalizations.leaveFamilyButton,
-            onPressed: () async {
-              final confirm = await showDialog<bool>(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  title: Text(appLocalizations.confirmLeaveFamilyTitle),
-                  content: Text(appLocalizations.confirmLeaveFamilyMessage),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(ctx).pop(false),
-                      child: Text(appLocalizations.cancelButton),
-                    ),
-                    TextButton(
-                      onPressed: () => Navigator.of(ctx).pop(true),
-                      child: Text(appLocalizations.leaveButton),
-                    ),
-                  ],
-                ),
-              );
+            onPressed: handleLeaveFamily,
 
-              if (confirm != true) return;
-
-              try {
-                await ref
-                    .read(familyControllerProvider.notifier)
-                    .leaveFamily(familyId);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(appLocalizations.leaveFamilySuccess),
-                    ),
-                  );
-                  Navigator.of(context).pop();
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        appLocalizations.leaveFamilyError(e),
-                      ),
-                    ),
-                  );
-                }
-              }
-            },
           ),
         ],
       ),
@@ -315,7 +315,7 @@ class FamilyDetailsScreen extends ConsumerWidget {
                   },
                 ),
                 const SizedBox(height: 24),
-                if (isAdmin) // Admin actions
+                if (isAdmin)
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -344,6 +344,16 @@ class FamilyDetailsScreen extends ConsumerWidget {
                       ),
                     ],
                   ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: handleLeaveFamily,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.error,
+                    foregroundColor: Theme.of(context).colorScheme.onError,
+                  ),
+                  icon: const Icon(Icons.exit_to_app),
+                  label: Text(appLocalizations.leaveFamilyButton),
+                ),
               ],
             ),
           );
