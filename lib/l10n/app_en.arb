@@ -108,6 +108,12 @@
       "date": {}
     }
   },
+  "invitationRelationship": "Relationship: {relationship}",
+  "@invitationRelationship": {
+    "placeholders": {
+      "relationship": {}
+    }
+  },
   "noInvitationFound": "No valid pending invitation found for this code.",
   "familyJoinedSuccess": "Successfully joined the family!",
   "familyJoinedError": "Failed to join family: {error}",

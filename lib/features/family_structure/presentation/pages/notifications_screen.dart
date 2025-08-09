@@ -107,18 +107,12 @@ class NotificationsScreen extends ConsumerWidget {
                               .split(' ')[0],
                         ),
                       ),
-
-                      // --- CAMBIO CLAVE AQUÍ: Mostrar el tipo de relación ---
                       if (invitation.initialRelationshipType != null)
                         Text(
                           appLocalizations.invitationRelationship(
-                            appLocalizations.relationshipLabel(
-                              invitation.initialRelationshipType!,
-                            ),
+                            invitation.initialRelationshipType!,
                           ),
                         ),
-
-                      // ----------------------------------------------------
                       const SizedBox(height: 16),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,

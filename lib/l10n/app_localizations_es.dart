@@ -209,6 +209,11 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String invitationRelationship(Object relationship) {
+    return 'Parentesco: $relationship';
+  }
+
+  @override
   String get noInvitationFound => 'No se encontró ninguna invitación pendiente válida para este código.';
 
   @override
