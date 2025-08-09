@@ -1,10 +1,8 @@
 // functions/src/index.ts (o index.js si usas JavaScript)
 
-import * as functions from "firebase-functions";
+import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 import { v4 as uuidv4 } from "uuid"; // Necesitarás instalar 'uuid' y '@types/uuid'
-// Importación específica para CallableContext en funciones v2
-import { CallableContext } from "firebase-functions/lib/common/providers/https"; // <--- CAMBIO CLAVE AQUÍ
 
 // Inicializa el SDK de Admin de Firebase
 admin.initializeApp();
@@ -22,7 +20,7 @@ interface InviteMemberData {
 }
 
 // Función Callable para invitar a miembros a una familia
-export const inviteFamilyMember = functions.https.onCall(async (request: functions.https.CallableRequest<InviteMemberData>, context: CallableContext) => { // Usamos el tipo importado
+export const inviteFamilyMember = functions.https.onCall(async (data: InviteMemberData, context: functions.https.CallableContext) => {
   // 1. Autenticación y Verificación de Administrador
   // Asegurarse de que el contexto de autenticación existe y el usuario está logueado
   if (!context.auth || !context.auth.uid) {
@@ -34,7 +32,7 @@ export const inviteFamilyMember = functions.https.onCall(async (request: functio
 
   const currentUserId = context.auth.uid;
   
-  // Extraer datos del payload de forma segura desde request.data
+  // Extraer datos del payload de forma segura
   const {
     familyId,
     emailOrName,
@@ -43,7 +41,7 @@ export const inviteFamilyMember = functions.https.onCall(async (request: functio
     initialRelationshipType,
     isDeceased = false, // Asignar valor por defecto para evitar undefined
     isPet = false,      // Asignar valor por defecto para evitar undefined
-  } = request.data; // Accedemos a los datos a través de request.data
+  } = data;
 
   if (!familyId || !emailOrName) {
     throw new functions.https.HttpsError(
