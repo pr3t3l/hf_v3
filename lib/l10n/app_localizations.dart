@@ -515,6 +515,42 @@ abstract class AppLocalizations {
   /// **'Failed to remove member: {error}'**
   String memberRemovedError(Object error);
 
+  /// No description provided for @leaveFamilyButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave Family'**
+  String get leaveFamilyButton;
+
+  /// No description provided for @confirmLeaveFamilyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Leave'**
+  String get confirmLeaveFamilyTitle;
+
+  /// No description provided for @confirmLeaveFamilyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to leave this family?'**
+  String get confirmLeaveFamilyMessage;
+
+  /// No description provided for @leaveButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave'**
+  String get leaveButton;
+
+  /// No description provided for @leaveFamilySuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'You have left the family.'**
+  String get leaveFamilySuccess;
+
+  /// No description provided for @leaveFamilyError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to leave family: {error}'**
+  String leaveFamilyError(Object error);
+
   /// No description provided for @inviteMemberButton.
   ///
   /// In en, this message translates to:

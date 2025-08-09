@@ -1,6 +1,7 @@
 // functions/src/index.ts (o index.js si usas JavaScript)
 
 import { onCall, HttpsError, CallableRequest } from "firebase-functions/v2/https";
+
 import * as admin from "firebase-admin";
 import { v4 as uuidv4 } from "uuid"; // Necesitarás instalar 'uuid' y '@types/uuid'
 
@@ -22,6 +23,7 @@ interface InviteMemberData {
 // Función Callable para invitar a miembros a una familia
 export const inviteFamilyMember = onCall<InviteMemberData>(async (request: CallableRequest<InviteMemberData>) => {
   const { data, auth } = request;
+
   // 1. Autenticación y Verificación de Administrador
   // Asegurarse de que el contexto de autenticación existe y el usuario está logueado
   if (!auth || !auth.uid) {
@@ -140,6 +142,7 @@ export const inviteFamilyMember = onCall<InviteMemberData>(async (request: Calla
 
     // TODO: Aquí se podría integrar el envío de correo electrónico (ej. con SendGrid)
     // logger.info(`Invitation created for ${emailOrName} with code: ${invitationCode}`);
+
     await batch.commit();
 
     return { status: "success", message: "Invitación enviada con éxito." };

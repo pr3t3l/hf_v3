@@ -139,6 +139,17 @@
       "error": {}
     }
   },
+  "leaveFamilyButton": "Salir de la Familia",
+  "confirmLeaveFamilyTitle": "Confirmar salida",
+  "confirmLeaveFamilyMessage": "¿Estás seguro de que quieres salir de esta familia?",
+  "leaveButton": "Salir",
+  "leaveFamilySuccess": "Has salido de la familia.",
+  "leaveFamilyError": "Error al salir de la familia: {error}",
+  "@leaveFamilyError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
   "inviteMemberButton": "Invitar Miembro",
   "viewFamilyTreeButton": "Ver Árbol Familiar",
 

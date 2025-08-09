@@ -139,6 +139,17 @@
       "error": {}
     }
   },
+  "leaveFamilyButton": "Leave Family",
+  "confirmLeaveFamilyTitle": "Confirm Leave",
+  "confirmLeaveFamilyMessage": "Are you sure you want to leave this family?",
+  "leaveButton": "Leave",
+  "leaveFamilySuccess": "You have left the family.",
+  "leaveFamilyError": "Failed to leave family: {error}",
+  "@leaveFamilyError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
   "inviteMemberButton": "Invite Member",
   "viewFamilyTreeButton": "View Family Tree",
   "errorLoadingFamilyDetails": "Error loading family details: {error}",
