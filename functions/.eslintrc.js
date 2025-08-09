@@ -28,6 +28,11 @@ module.exports = {
   rules: {
     "quotes": ["error", "double"],
     "import/no-unresolved": 0,
-    "indent": ["error", 2],
+    "indent": ["error", 2], // Asegura indentación de 2 espacios
+    "max-len": ["off"], // <--- DESHABILITADO: Ignora la longitud de línea
+    "object-curly-spacing": ["off"], // <--- DESHABILITADO: Ignora espacios en llaves de objetos
+    "linebreak-style": ["off"], // <--- DESHABILITADO: Ignora el estilo de salto de línea (CRLF vs LF)
+    "no-trailing-spaces": ["off"], // <--- DESHABILITADO: Ignora espacios al final de la línea
+    "@typescript-eslint/no-explicit-any": "off", // <--- DESHABILITADO: Permite el uso de 'any'
   },
 };

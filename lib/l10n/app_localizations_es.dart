@@ -256,6 +256,27 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String get leaveFamilyButton => 'Salir de la Familia';
+
+  @override
+  String get confirmLeaveFamilyTitle => 'Confirmar salida';
+
+  @override
+  String get confirmLeaveFamilyMessage =>
+      '¿Estás seguro de que quieres salir de esta familia?';
+
+  @override
+  String get leaveButton => 'Salir';
+
+  @override
+  String get leaveFamilySuccess => 'Has salido de la familia.';
+
+  @override
+  String leaveFamilyError(Object error) {
+    return 'Error al salir de la familia: $error';
+  }
+
+  @override
   String get inviteMemberButton => 'Invitar Miembro';
 
   @override

@@ -53,7 +53,6 @@
   "navJournal": "Journal",
   "navGames": "Games",
   "navProfile": "Profile",
-
   "familySelectionTitle": "Family Hub",
   "noFamilyMessage": "You don't belong to any family yet. Create one or join an existing one!",
   "createFamilyButton": "Create New Family",
@@ -72,7 +71,6 @@
       "error": {}
     }
   },
-
   "createFamilyTitle": "Create New Family",
   "createFamilyDescription": "Give your family a name to get started!",
   "familyNameLabel": "Family Name",
@@ -85,7 +83,6 @@
       "error": {}
     }
   },
-
   "joinFamilyTitle": "Join a Family",
   "joinFamilyDescription": "Enter the invitation code you received.",
   "invitationCodeLabel": "Invitation Code",
@@ -125,7 +122,6 @@
       "error": {}
     }
   },
-
   "familyDetailsTitle": "Family Details",
   "registeredMembersTitle": "Registered Members",
   "unregisteredMembersTitle": "Other Family Members",
@@ -145,6 +141,17 @@
       "error": {}
     }
   },
+  "leaveFamilyButton": "Leave Family",
+  "confirmLeaveFamilyTitle": "Confirm Leave",
+  "confirmLeaveFamilyMessage": "Are you sure you want to leave this family?",
+  "leaveButton": "Leave",
+  "leaveFamilySuccess": "You have left the family.",
+  "leaveFamilyError": "Failed to leave family: {error}",
+  "@leaveFamilyError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
   "inviteMemberButton": "Invite Member",
   "viewFamilyTreeButton": "View Family Tree",
   "errorLoadingFamilyDetails": "Error loading family details: {error}",
@@ -153,7 +160,6 @@
       "error": {}
     }
   },
-
   "inviteMemberTitle": "Invite/Add Member",
   "registeredUserToggle": "Invite Registered User (by Email)",
   "memberNameLabel": "Member Name",
@@ -183,7 +189,6 @@
       "error": {}
     }
   },
-
   "manageRolesTitle": "Manage Member Role",
   "manageRoleFor": "Managing role for: {memberName}",
   "@manageRoleFor": {
@@ -208,10 +213,8 @@
       "error": {}
     }
   },
-
   "noFamilySelected": "No family selected",
   "errorLoadingFamiliesShort": "Error loading families.",
-
   "notificationsTitle": "Notifications",
   "noPendingInvitations": "You have no pending family invitations.",
   "invitationReceivedTitle": "New Family Invitation",
@@ -238,7 +241,6 @@
     }
   },
   "family_name_placeholder": "Loading family name...",
-
   "roleLabel": "{type, select, parent{Parent} child{Child} guardian{Guardian} administrator{Administrator} other{Other}}",
   "@roleLabel": {
     "placeholders": {
@@ -251,18 +253,12 @@
       "type": {}
     }
   },
+  "invitationRelationship": "Relationship: {relationshipType}",
+  "@invitationRelationship": {
+    "placeholders": {
+      "relationshipType": {}
+    }
+  },
   "confirmPasswordRequired": "Confirm Password is required.",
-  "emailHint": "Enter email",
-  "role_parent": "Parent",
-  "role_child": "Child",
-  "role_guardian": "Guardian",
-  "role_administrator": "Administrator",
-  "relationship_sibling": "Sibling",
-  "relationship_spouse": "Spouse",
-  "relationship_cousin": "Cousin",
-  "relationship_grandparent": "Grandparent",
-  "relationship_other": "Other",
-  "relationship_pet": "Pet",
-  "relationship_deceased": "Deceased"
+  "emailHint": "Enter email"
 }
-

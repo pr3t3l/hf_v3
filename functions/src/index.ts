@@ -4,6 +4,7 @@ import { onCall, HttpsError, CallableRequest } from "firebase-functions/v2/https
 import * as admin from "firebase-admin";
 import { v4 as uuidv4 } from "uuid"; // Necesitarás instalar 'uuid' y '@types/uuid'
 
+
 // Inicializa el SDK de Admin de Firebase
 admin.initializeApp();
 const db = admin.firestore();
@@ -22,6 +23,7 @@ interface InviteMemberData {
 // Función Callable para invitar a miembros a una familia
 export const inviteFamilyMember = onCall<InviteMemberData>(async (request: CallableRequest<InviteMemberData>) => {
   const { data, auth } = request;
+
   // 1. Autenticación y Verificación de Administrador
   // Asegurarse de que el contexto de autenticación existe y el usuario está logueado
   if (!auth || !auth.uid) {
@@ -32,7 +34,7 @@ export const inviteFamilyMember = onCall<InviteMemberData>(async (request: Calla
   }
 
   const currentUserId = auth.uid;
-  
+
   // Extraer datos del payload de forma segura
   const {
     familyId,
@@ -42,6 +44,7 @@ export const inviteFamilyMember = onCall<InviteMemberData>(async (request: Calla
     initialRelationshipType,
     isDeceased = false, // Asignar valor por defecto para evitar undefined
     isPet = false,      // Asignar valor por defecto para evitar undefined
+
   } = data;
 
   if (!familyId || !emailOrName) {
@@ -79,7 +82,7 @@ export const inviteFamilyMember = onCall<InviteMemberData>(async (request: Calla
     // --- Invitar usuario registrado existente por email ---
     const invitedUserQuery = await db
       .collection("users")
-      .where("email", "==", emailOrName)
+      .where("email", "==", emailOrName.toLowerCase()) // Convertir a minúsculas
       .limit(1)
       .get();
 
@@ -140,9 +143,10 @@ export const inviteFamilyMember = onCall<InviteMemberData>(async (request: Calla
 
     // TODO: Aquí se podría integrar el envío de correo electrónico (ej. con SendGrid)
     // logger.info(`Invitation created for ${emailOrName} with code: ${invitationCode}`);
+
     await batch.commit();
 
-    return { status: "success", message: "Invitación enviada con éxito." };
+    return {status: "success", message: "Invitación enviada con éxito."};
   } else {
     // --- Añadir miembro no registrado por nombre (puede ser fallecido/mascota) ---
     const unregisteredMembers: any[] = familyData?.unregisteredMembers || [];
@@ -181,8 +185,8 @@ export const inviteFamilyMember = onCall<InviteMemberData>(async (request: Calla
       const relationshipId = uuidv4();
       batch.set(db.collection("familyRelationships").doc(relationshipId), {
         familyId: familyId,
-        member1Ref: { type: "user", id: currentUserId },
-        member2Ref: { type: "unregisteredMember", id: memberId },
+        member1Ref: {type: "user", id: currentUserId},
+        member2Ref: {type: "unregisteredMember", id: memberId},
         relationshipType: initialRelationshipType,
         dynamicType: "initial_connection",
         description: "Relación establecida al añadir miembro no registrado.",
@@ -195,6 +199,6 @@ export const inviteFamilyMember = onCall<InviteMemberData>(async (request: Calla
     }
 
     await batch.commit();
-    return { status: "success", message: "Miembro no registrado añadido con éxito." };
+    return {status: "success", message: "Miembro no registrado añadido con éxito."};
   }
 });
