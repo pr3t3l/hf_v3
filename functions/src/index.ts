@@ -1,10 +1,8 @@
 // functions/src/index.ts (o index.js si usas JavaScript)
 
-import * as functions from "firebase-functions";
+import { onCall, HttpsError, CallableRequest } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 import { v4 as uuidv4 } from "uuid"; // Necesitarás instalar 'uuid' y '@types/uuid'
-// Importación específica para CallableContext en funciones v2
-import { CallableContext } from "firebase-functions/lib/common/providers/https"; // <--- CAMBIO CLAVE AQUÍ
 
 // Inicializa el SDK de Admin de Firebase
 admin.initializeApp();
@@ -22,19 +20,20 @@ interface InviteMemberData {
 }
 
 // Función Callable para invitar a miembros a una familia
-export const inviteFamilyMember = functions.https.onCall(async (request: functions.https.CallableRequest<InviteMemberData>, context: CallableContext) => { // Usamos el tipo importado
+export const inviteFamilyMember = onCall<InviteMemberData>(async (request: CallableRequest<InviteMemberData>) => {
+  const { data, auth } = request;
   // 1. Autenticación y Verificación de Administrador
   // Asegurarse de que el contexto de autenticación existe y el usuario está logueado
-  if (!context.auth || !context.auth.uid) {
-    throw new functions.https.HttpsError(
+  if (!auth || !auth.uid) {
+    throw new HttpsError(
       "unauthenticated",
       "La solicitud debe estar autenticada."
     );
   }
 
-  const currentUserId = context.auth.uid;
+  const currentUserId = auth.uid;
   
-  // Extraer datos del payload de forma segura desde request.data
+  // Extraer datos del payload de forma segura
   const {
     familyId,
     emailOrName,
@@ -43,10 +42,10 @@ export const inviteFamilyMember = functions.https.onCall(async (request: functio
     initialRelationshipType,
     isDeceased = false, // Asignar valor por defecto para evitar undefined
     isPet = false,      // Asignar valor por defecto para evitar undefined
-  } = request.data; // Accedemos a los datos a través de request.data
+  } = data;
 
   if (!familyId || !emailOrName) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError(
       "invalid-argument",
       "familyId y emailOrName son obligatorios."
     );
@@ -56,7 +55,7 @@ export const inviteFamilyMember = functions.https.onCall(async (request: functio
   const familyDoc = await familyRef.get();
 
   if (!familyDoc.exists) {
-    throw new functions.https.HttpsError("not-found", "Familia no encontrada.");
+    throw new HttpsError("not-found", "Familia no encontrada.");
   }
 
   const familyData = familyDoc.data();
@@ -64,7 +63,7 @@ export const inviteFamilyMember = functions.https.onCall(async (request: functio
 
   // Verificar si el usuario que llama es un administrador de la familia
   if (!adminUserIds.includes(currentUserId)) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError(
       "permission-denied",
       "Solo los administradores de la familia pueden invitar miembros."
     );
@@ -85,7 +84,7 @@ export const inviteFamilyMember = functions.https.onCall(async (request: functio
       .get();
 
     if (invitedUserQuery.empty) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError(
         "not-found",
         "No se encontró usuario registrado con este email."
       );
@@ -93,9 +92,9 @@ export const inviteFamilyMember = functions.https.onCall(async (request: functio
     const invitedUserId = invitedUserQuery.docs[0].id;
 
     // Verificar si ya es miembro
-    const memberUserIds: any[] = familyData?.memberUserIds || [];
-    if (memberUserIds.some((member: any) => member.userId === invitedUserId)) {
-      throw new functions.https.HttpsError(
+    const memberUserIds: string[] = familyData?.memberUserIds || [];
+    if (memberUserIds.includes(invitedUserId)) {
+      throw new HttpsError(
         "already-exists",
         "Este usuario ya es miembro de la familia."
       );
@@ -111,7 +110,7 @@ export const inviteFamilyMember = functions.https.onCall(async (request: functio
       .get();
 
     if (!existingInvitation.empty) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError(
         "already-exists",
         "Ya existe una invitación pendiente para este usuario a esta familia."
       );
@@ -140,7 +139,8 @@ export const inviteFamilyMember = functions.https.onCall(async (request: functio
     });
 
     // TODO: Aquí se podría integrar el envío de correo electrónico (ej. con SendGrid)
-    // functions.logger.info(`Invitation created for ${emailOrName} with code: ${invitationCode}`);
+    // logger.info(`Invitation created for ${emailOrName} with code: ${invitationCode}`);
+    await batch.commit();
 
     return { status: "success", message: "Invitación enviada con éxito." };
   } else {
@@ -154,7 +154,7 @@ export const inviteFamilyMember = functions.https.onCall(async (request: functio
           member.isPet === isPet
       )
     ) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError(
         "already-exists",
         "Un miembro no registrado con este nombre y tipo ya existe en la familia."
       );
