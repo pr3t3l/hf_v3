@@ -72,6 +72,7 @@ class FamilyService {
         ),
       ],
       unregisteredMembers: [],
+      usersPending: [],
       createdAt: Timestamp.now(),
       isActive: true,
     );
@@ -112,114 +113,28 @@ class FamilyService {
       debugPrint('FamilyService: Error - Usuario no autenticado.');
       throw Exception("User not authenticated.");
     }
-
-    final invitationsQuery = await _firestore
-        .collection('invitations')
-        .where('invitationCode', isEqualTo: invitationCode)
-        .where('status', isEqualTo: 'pending')
-        .limit(1)
-        .get();
-
-    if (invitationsQuery.docs.isEmpty) {
-      debugPrint('FamilyService: Invitación inválida o expirada.');
-      throw Exception("Invalid or expired invitation code.");
-    }
-
-    final invitationDoc = invitationsQuery.docs.first;
-    final invitation = Invitation.fromFirestore(invitationDoc);
-    debugPrint(
-      'FamilyService: Invitación encontrada para familyId: ${invitation.familyId}',
-    );
-
-    final familyRef = _firestore
-        .collection('families')
-        .doc(invitation.familyId);
-    final familyDoc = await familyRef.get();
-
-    if (!familyDoc.exists) {
-      debugPrint('FamilyService: Error - Familia no existe.');
-      throw Exception("Family does not exist.");
-    }
-
-    final family = family_model.Family.fromFirestore(familyDoc);
-    debugPrint('FamilyService: Familia cargada: ${family.familyName}');
-
-    // Check if user is already a member
-    if (family.memberUserIds.any((member) => member.userId == currentUserId)) {
-      debugPrint(
-        'FamilyService: Error - Usuario ya es miembro de esta familia.',
-      );
-      throw Exception("You are already a member of this family.");
-    }
-
-    final currentUserDoc = await _firestore
-        .collection('users')
-        .doc(currentUserId)
-        .get();
-    if (!currentUserDoc.exists) {
-      throw Exception("Current user profile not found.");
-    }
-    final currentUserProfile = UserProfile.fromFirestore(currentUserDoc);
-    debugPrint(
-      'FamilyService: Perfil de usuario actual cargado: ${currentUserProfile.displayName}',
-    );
-
-    final batch = _firestore.batch();
-
-    batch.update(familyRef, {
-      'memberUserIds': FieldValue.arrayUnion([
-        FamilyMember(
-          userId: currentUserId!,
-          role: invitation.initialRole ?? 'child',
-          displayName: currentUserProfile.displayName,
-        ).toFirestore(),
-      ]),
-    });
-    debugPrint('FamilyService: Añadiendo usuario a memberUserIds del batch.');
-
-    batch.update(_firestore.collection('users').doc(currentUserId), {
-      'familyIds': FieldValue.arrayUnion([invitation.familyId]),
-    });
-    debugPrint('FamilyService: Añadiendo familyId a user profile del batch.');
-
-    batch.update(invitationDoc.reference, {'status': 'accepted'});
-    debugPrint(
-      'FamilyService: Actualizando estado de invitación a aceptada en el batch.',
-    );
-
-    // ignore: unnecessary_null_comparison
-    if (invitation.invitedByUserId != null &&
-        invitation.initialRelationshipType != null) {
-      final relationshipId = _uuid.v4();
-      batch.set(
-        _firestore.collection('familyRelationships').doc(relationshipId),
-        {
-          'familyId': invitation.familyId,
-          'member1Ref': {'type': 'user', 'id': invitation.invitedByUserId},
-          'member2Ref': {'type': 'user', 'id': currentUserId},
-          'relationshipType': invitation.initialRelationshipType,
-          'dynamicType': 'initial_connection',
-          'description': 'Relación establecida al unirse a la familia.',
-          'frequency': 0.0,
-          'lastInteraction': Timestamp.now(),
-          'patterns': [],
-          'iaConfidenceScore': 0.0,
-          'interactionCount': 0,
-        },
-      );
-      debugPrint('FamilyService: Creando relación inicial en el batch.');
-    }
-
     try {
-      await batch.commit();
-      debugPrint('FamilyService: Batch commit exitoso para joinFamily.');
-    } catch (e) {
+      final HttpsCallable callable = _functions.httpsCallable('joinFamily');
+      final result = await callable.call({'invitationCode': invitationCode});
+      debugPrint('FamilyService: Respuesta de Cloud Function joinFamily: ${result.data}');
+      if (result.data['status'] != 'success') {
+        throw Exception(
+          result.data['message'] ?? 'Error al unirse a la familia.',
+        );
+      }
+      final String familyId = result.data['familyId'];
+      final familyDoc =
+          await _firestore.collection('families').doc(familyId).get();
+      return family_model.Family.fromFirestore(familyDoc);
+    } on FirebaseFunctionsException catch (e) {
       debugPrint(
-        'FamilyService: Error al hacer commit del batch para joinFamily: $e',
+        'FamilyService: Error de Cloud Function joinFamily: ${e.code} - ${e.message}',
       );
+      throw Exception('Error al unirse a la familia: ${e.message}');
+    } catch (e) {
+      debugPrint('FamilyService: Error inesperado en joinFamily: $e');
       rethrow;
     }
-    return family_model.Family.fromFirestore(await familyRef.get());
   }
 
   // --- NEW: Fetch Invitation by Code ---

@@ -1,0 +1,69 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Check if the request comes from an authenticated user.
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    match /families/{familyId} {
+      // User is an admin of the family.
+      function isAdmin() {
+        return isSignedIn() && request.auth.uid in resource.data.adminUserIds;
+      }
+      // User is a member of the family.
+      function isMember() {
+        return isSignedIn() &&
+          resource.data.memberUserIds.map(m => m.userId).hasAny([request.auth.uid]);
+      }
+      // User has a pending invitation to the family.
+      function isPending() {
+        return isSignedIn() &&
+          resource.data.usersPending is list &&
+          resource.data.usersPending.hasAny([request.auth.uid]);
+      }
+
+      // Allow read for admins, members, or invited users.
+      allow read: if isAdmin() || isMember() || isPending();
+      // Allow any authenticated user to create a family.
+      allow create: if isSignedIn();
+      // Only admins can update or delete the family.
+      allow update, delete: if isAdmin();
+    }
+
+    match /invitations/{invitationId} {
+      // Invited user or inviter can read the invitation.
+      allow read: if isSignedIn() &&
+        (request.auth.uid == resource.data.invitedUserId ||
+         request.auth.uid == resource.data.invitedByUserId);
+      // Only the invited user can update the invitation.
+      allow update: if isSignedIn() && request.auth.uid == resource.data.invitedUserId;
+      // Creation and deletion are handled solely by Cloud Functions.
+      allow create: if false;
+      allow delete: if false;
+    }
+
+    // Users can read and write their own profile document.
+    match /users/{userId} {
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Only members of a family can read or write its relationships.
+    match /familyRelationships/{relationshipId} {
+      allow read, write: if isSignedIn() &&
+        get(/databases/$(database)/documents/families/$(resource.data.familyId))
+          .data.memberUserIds.map(m => m.userId).hasAny([request.auth.uid]);
+    }
+
+    // Only the owner can access a personal connection document.
+    match /personalConnections/{connectionId} {
+      allow read, write: if isSignedIn() && request.auth.uid == resource.data.ownerUserId;
+    }
+
+    // Deny all other access by default.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
