@@ -12,6 +12,7 @@ class Family {
   memberUserIds; // List of registered users in the family
   final List<UnregisteredMember>
   unregisteredMembers; // List of non-registered members
+  final List<String> usersPending; // UIDs of invited users pending acceptance
   final Timestamp createdAt;
   final bool isActive;
 
@@ -21,6 +22,7 @@ class Family {
     required this.adminUserIds,
     required this.memberUserIds,
     required this.unregisteredMembers,
+    required this.usersPending,
     required this.createdAt,
     required this.isActive,
   });
@@ -43,6 +45,7 @@ class Family {
               )
               .toList() ??
           [],
+      usersPending: List<String>.from(data['usersPending'] ?? []),
       createdAt: data['createdAt'] ?? Timestamp.now(),
       isActive: data['isActive'] ?? true,
     );
@@ -57,6 +60,7 @@ class Family {
       'unregisteredMembers': unregisteredMembers
           .map((m) => m.toFirestore())
           .toList(),
+      'usersPending': usersPending,
       'createdAt': createdAt,
       'isActive': isActive,
     };

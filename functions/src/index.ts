@@ -20,6 +20,10 @@ interface InviteMemberData {
   isPet?: boolean;
 }
 
+interface JoinFamilyData {
+  invitationCode: string;
+}
+
 // Función Callable para invitar a miembros a una familia
 export const inviteFamilyMember = onCall<InviteMemberData>(async (request: CallableRequest<InviteMemberData>) => {
   const { data, auth } = request;
@@ -43,7 +47,7 @@ export const inviteFamilyMember = onCall<InviteMemberData>(async (request: Calla
     initialRole,
     initialRelationshipType,
     isDeceased = false, // Asignar valor por defecto para evitar undefined
-    isPet = false,      // Asignar valor por defecto para evitar undefined
+    isPet = false, // Asignar valor por defecto para evitar undefined
 
   } = data;
 
@@ -141,6 +145,11 @@ export const inviteFamilyMember = onCall<InviteMemberData>(async (request: Calla
       invitationCode: invitationCode,
     });
 
+    // Añadir UID al array usersPending de la familia
+    batch.update(familyRef, {
+      usersPending: admin.firestore.FieldValue.arrayUnion(invitedUserId),
+    });
+
     // TODO: Aquí se podría integrar el envío de correo electrónico (ej. con SendGrid)
     // logger.info(`Invitation created for ${emailOrName} with code: ${invitationCode}`);
 
@@ -201,4 +210,87 @@ export const inviteFamilyMember = onCall<InviteMemberData>(async (request: Calla
     await batch.commit();
     return {status: "success", message: "Miembro no registrado añadido con éxito."};
   }
+});
+
+// Función Callable para que un usuario acepte una invitación y se una a la familia
+export const joinFamily = onCall<JoinFamilyData>(async (request: CallableRequest<JoinFamilyData>) => {
+  const { data, auth } = request;
+
+  if (!auth || !auth.uid) {
+    throw new HttpsError("unauthenticated", "La solicitud debe estar autenticada.");
+  }
+
+  const { invitationCode } = data;
+  if (!invitationCode) {
+    throw new HttpsError("invalid-argument", "invitationCode es obligatorio.");
+  }
+
+  const invitationQuery = await db
+    .collection("invitations")
+    .where("invitationCode", "==", invitationCode)
+    .where("status", "==", "pending")
+    .limit(1)
+    .get();
+
+  if (invitationQuery.empty) {
+    throw new HttpsError("not-found", "Invitación no encontrada o ya procesada.");
+  }
+
+  const invitationDoc = invitationQuery.docs[0];
+  const invitationData = invitationDoc.data();
+  if (invitationData.invitedUserId !== auth.uid) {
+    throw new HttpsError("permission-denied", "Esta invitación no es para este usuario.");
+  }
+
+  const expiresAt: admin.firestore.Timestamp = invitationData.expiresAt;
+  if (expiresAt.toDate() < new Date()) {
+    throw new HttpsError("permission-denied", "La invitación ha expirado.");
+  }
+
+  const familyRef = db.collection("families").doc(invitationData.familyId);
+  const familyDoc = await familyRef.get();
+  if (!familyDoc.exists) {
+    throw new HttpsError("not-found", "Familia no encontrada.");
+  }
+
+  const userProfileDoc = await db.collection("users").doc(auth.uid).get();
+  const displayName = userProfileDoc.data()?.displayName || "Usuario";
+  const role = invitationData.initialRole || "child";
+
+  const batch = db.batch();
+  batch.update(familyRef, {
+    memberUserIds: admin.firestore.FieldValue.arrayUnion({
+      userId: auth.uid,
+      role: role,
+      displayName: displayName,
+    }),
+    usersPending: admin.firestore.FieldValue.arrayRemove(auth.uid),
+  });
+
+  batch.update(db.collection("users").doc(auth.uid), {
+    familyIds: admin.firestore.FieldValue.arrayUnion(invitationData.familyId),
+  });
+
+  batch.update(invitationDoc.ref, { status: "accepted" });
+
+  if (invitationData.invitedByUserId && invitationData.initialRelationshipType) {
+    const relationshipId = uuidv4();
+    batch.set(db.collection("familyRelationships").doc(relationshipId), {
+      familyId: invitationData.familyId,
+      member1Ref: { type: "user", id: invitationData.invitedByUserId },
+      member2Ref: { type: "user", id: auth.uid },
+      relationshipType: invitationData.initialRelationshipType,
+      dynamicType: "initial_connection",
+      description: "Relación establecida al unirse a la familia.",
+      frequency: 0.0,
+      lastInteraction: admin.firestore.Timestamp.now(),
+      patterns: [],
+      iaConfidenceScore: 0.0,
+      interactionCount: 0,
+    });
+  }
+
+  await batch.commit();
+
+  return { status: "success", familyId: invitationData.familyId };
 });
