@@ -28,10 +28,11 @@ class FamilyDetailsScreen extends ConsumerWidget {
       return translation.isNotEmpty ? translation : type;
     }
 
+    // Access FamilyService once for stream and current user ID
+    final familyService = ref.watch(familyServiceProvider);
     // Stream a single family's details
-    final familyAsyncValue =
-        ref.watch(familyServiceProvider).getFamilyStream(familyId);
-    final currentUserId = ref.watch(familyServiceProvider).currentUserId;
+    final familyAsyncValue = familyService.getFamilyStream(familyId);
+    final currentUserId = familyService.currentUserId;
 
     Future<void> handleLeaveFamily() async {
       final confirm = await showDialog<bool>(
@@ -171,6 +172,40 @@ class FamilyDetailsScreen extends ConsumerWidget {
                     );
                   },
                 ),
+                // Pending Members Section
+                if (family.usersPending.isNotEmpty) ...[
+                  const SizedBox(height: 24),
+                  Text(
+                    appLocalizations.pendingMembersTitle,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 8),
+                  ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: family.usersPending.length,
+                    itemBuilder: (context, index) {
+                      final pendingUid = family.usersPending[index];
+                      return Card(
+                        margin: const EdgeInsets.symmetric(vertical: 4.0),
+                        child: FutureBuilder<String>(
+                          future: familyService.getUserDisplayName(pendingUid),
+                          builder: (context, snapshot) {
+                            final displayName =
+                                snapshot.data ?? pendingUid;
+                            return ListTile(
+                              leading: const Icon(Icons.hourglass_top),
+                              title: Text(displayName),
+                              subtitle: Text(
+                                appLocalizations.pendingMemberStatus,
+                              ),
+                            );
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                ],
                 const SizedBox(height: 24),
                 Text(
                   appLocalizations.unregisteredMembersTitle,
