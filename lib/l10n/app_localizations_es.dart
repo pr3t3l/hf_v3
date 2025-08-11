@@ -234,6 +234,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get unregisteredMembersTitle => 'Otros Miembros de la Familia';
 
   @override
+  String get pendingMembersTitle => 'Miembros Pendientes';
+
+  @override
+  String get pendingMemberStatus => 'Invitación pendiente';
+
+  @override
   String get confirmDeleteTitle => 'Confirmar Eliminación';
 
   @override
