@@ -7,30 +7,26 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow read: if isSignedIn();
       allow create: if isSignedIn() && request.auth.uid == userId;
-      allow update: if isSignedIn() && request.auth.uid == userId;
+      allow read, update, delete: if isSignedIn() && request.auth.uid == userId;
     }
 
     match /families/{familyId} {
-      function isAdmin() {
-        return isSignedIn() && resource.data.adminUserIds != null &&
-               resource.data.adminUserIds.hasAny([request.auth.uid]);
-      }
       function isMember() {
         return isSignedIn() &&
-          resource.data.memberUserIds.map(m, m.userId).hasAny([request.auth.uid]);
-      }
-      function isPending() {
-        return isSignedIn() && resource.data.usersPending != null && resource.data.usersPending.hasAny([request.auth.uid]);
+               resource.data.memberUserIds != null &&
+               resource.data.memberUserIds.hasAny([request.auth.uid]);
       }
 
-      allow read: if isAdmin() || isMember() || isPending();
-      allow update: if isAdmin() || (isPending() &&
-        request.resource.data.memberUserIds.map(m, m.userId).hasAny([request.auth.uid]));
-      allow create: if isSignedIn();
-      allow read: if isAdmin() || isMember();
+      function isAdmin() {
+        return isSignedIn() &&
+               resource.data.adminUserIds != null &&
+               resource.data.adminUserIds.hasAny([request.auth.uid]);
+      }
+
+      allow read: if isMember() || isAdmin();
       allow update: if isAdmin();
+      allow create: if isSignedIn();
     }
 
     match /invitations/{invitationId} {
@@ -39,3 +35,4 @@ service cloud.firestore {
     }
   }
 }
+
