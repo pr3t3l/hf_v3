@@ -1,6 +1,7 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
     function isSignedIn() {
       return request.auth != null;
     }
@@ -13,7 +14,8 @@ service cloud.firestore {
 
     match /families/{familyId} {
       function isAdmin() {
-        return isSignedIn() && request.auth.uid in resource.data.adminUserIds;
+        return isSignedIn() && resource.data.adminUserIds != null &&
+               resource.data.adminUserIds.hasAny([request.auth.uid]);
       }
       function isMember() {
         return isSignedIn() &&
@@ -27,14 +29,13 @@ service cloud.firestore {
       allow update: if isAdmin() || (isPending() &&
         request.resource.data.memberUserIds.map(m, m.userId).hasAny([request.auth.uid]));
       allow create: if isSignedIn();
+      allow read: if isAdmin() || isMember();
+      allow update: if isAdmin();
     }
 
     match /invitations/{invitationId} {
-      allow read: if isSignedIn() &&
-        (request.auth.uid == resource.data.invitedUserId ||
-         request.auth.uid == resource.data.invitedByUserId);
-      allow update: if isSignedIn() && request.auth.uid == resource.data.invitedUserId;
-      allow create, delete: if false;
+      allow create: if isSignedIn();
+      allow read, update: if isSignedIn() && request.auth.uid == resource.data.invitedUserId;
     }
   }
 }
