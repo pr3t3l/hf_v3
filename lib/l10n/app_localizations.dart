@@ -485,6 +485,18 @@ abstract class AppLocalizations {
   /// **'Other Family Members'**
   String get unregisteredMembersTitle;
 
+  /// No description provided for @pendingMembersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending Members'**
+  String get pendingMembersTitle;
+
+  /// No description provided for @pendingMemberStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Invitation pending'**
+  String get pendingMemberStatus;
+
   /// No description provided for @confirmDeleteTitle.
   ///
   /// In en, this message translates to:

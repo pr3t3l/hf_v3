@@ -125,6 +125,8 @@
   "familyDetailsTitle": "Detalles de la Familia",
   "registeredMembersTitle": "Miembros Registrados",
   "unregisteredMembersTitle": "Otros Miembros de la Familia",
+  "pendingMembersTitle": "Miembros Pendientes",
+  "pendingMemberStatus": "Invitación pendiente",
   "confirmDeleteTitle": "Confirmar Eliminación",
   "confirmDeleteUnregisteredMember": "¿Estás seguro de que quieres eliminar a {memberName} de esta familia?",
   "@confirmDeleteUnregisteredMember": {
