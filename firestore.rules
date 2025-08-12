@@ -7,7 +7,9 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow create, read, update, delete: if isSignedIn() && request.auth.uid == userId;
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isSignedIn() && request.auth.uid == userId;
     }
 
     match /families/{familyId} {
@@ -16,10 +18,16 @@ service cloud.firestore {
                resource.data.adminUserIds.hasAny([request.auth.uid]);
       }
       function isMember() {
-        return isSignedIn() && resource.data.memberUserIds != null &&
-               resource.data.memberUserIds.hasAny([request.auth.uid]);
+        return isSignedIn() &&
+          resource.data.memberUserIds.map(m, m.userId).hasAny([request.auth.uid]);
+      }
+      function isPending() {
+        return isSignedIn() && resource.data.usersPending != null && resource.data.usersPending.hasAny([request.auth.uid]);
       }
 
+      allow read: if isAdmin() || isMember() || isPending();
+      allow update: if isAdmin() || (isPending() &&
+        request.resource.data.memberUserIds.map(m, m.userId).hasAny([request.auth.uid]));
       allow create: if isSignedIn();
       allow read: if isAdmin() || isMember();
       allow update: if isAdmin();
