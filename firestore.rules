@@ -1,33 +1,33 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
     function isSignedIn() {
       return request.auth != null;
     }
 
+    match /users/{userId} {
+      allow create, read, update, delete: if isSignedIn() && request.auth.uid == userId;
+    }
+
     match /families/{familyId} {
       function isAdmin() {
-        return isSignedIn() && request.auth.uid in resource.data.adminUserIds;
+        return isSignedIn() && resource.data.adminUserIds != null &&
+               resource.data.adminUserIds.hasAny([request.auth.uid]);
       }
       function isMember() {
-        return isSignedIn() && resource.data.memberUserIds.map(m => m.userId).hasAny([request.auth.uid]);
-      }
-      function isPending() {
-        return isSignedIn() && resource.data.usersPending != null && resource.data.usersPending.hasAny([request.auth.uid]);
+        return isSignedIn() && resource.data.memberUserIds != null &&
+               resource.data.memberUserIds.hasAny([request.auth.uid]);
       }
 
-      allow read: if isAdmin() || isMember() || isPending();
-      allow update: if isAdmin() || (isPending() &&
-        request.resource.data.memberUserIds.map(m => m.userId).hasAny([request.auth.uid]));
       allow create: if isSignedIn();
+      allow read: if isAdmin() || isMember();
+      allow update: if isAdmin();
     }
 
     match /invitations/{invitationId} {
-      allow read: if isSignedIn() &&
-        (request.auth.uid == resource.data.invitedUserId ||
-         request.auth.uid == resource.data.invitedByUserId);
-      allow update: if isSignedIn() && request.auth.uid == resource.data.invitedUserId;
-      allow create, delete: if false;
+      allow create: if isSignedIn();
+      allow read, update: if isSignedIn() && request.auth.uid == resource.data.invitedUserId;
     }
   }
 }

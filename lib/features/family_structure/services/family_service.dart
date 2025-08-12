@@ -331,6 +331,25 @@ class FamilyService {
     }
   }
 
+  // --- NEW: Get User Display Name by UID ---
+  Future<String> getUserDisplayName(String userId) async {
+    debugPrint('FamilyService: Obteniendo displayName para UID: $userId');
+    try {
+      final userDoc =
+          await _firestore.collection('users').doc(userId).get();
+      if (userDoc.exists) {
+        return UserProfile.fromFirestore(userDoc).displayName;
+      }
+      debugPrint('FamilyService: Usuario no encontrado para UID: $userId');
+      return 'Usuario Desconocido';
+    } catch (e) {
+      debugPrint(
+        'FamilyService: Error al obtener displayName para UID $userId: $e',
+      );
+      return 'Usuario Desconocido';
+    }
+  }
+
   // --- Assign/Modify Member Role ---
   Future<void> updateMemberRole(
     String familyId,
