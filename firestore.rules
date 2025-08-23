@@ -12,18 +12,18 @@ service cloud.firestore {
     }
 
     match /families/{familyId} {
-      function isMember() {
-        return isSignedIn() &&
-               resource.data.memberUserIds != null &&
-               resource.data.memberUserIds.hasAny([request.auth.uid]);
-      }
-
       function isAdmin() {
         return isSignedIn() &&
                resource.data.adminUserIds != null &&
-               resource.data.adminUserIds.hasAny([request.auth.uid]);
+               request.auth.uid in resource.data.adminUserIds; // Reviso la sintaxis para que sea correcta
       }
 
+      function isMember() {
+        return isSignedIn() &&
+               resource.data.memberUserIds != null &&
+               request.auth.uid in resource.data.memberUserIds;
+      }
+      
       allow read: if isMember() || isAdmin();
       allow update: if isAdmin();
       allow create: if isSignedIn();
@@ -35,4 +35,3 @@ service cloud.firestore {
     }
   }
 }
-
