@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hf_v3/l10n/app_localizations.dart';
 import 'package:hf_v3/features/family_structure/presentation/controllers/family_controller.dart';
 import 'package:hf_v3/features/family_structure/data/models/invitation.dart';
-import 'package:hf_v3/features/family_structure/services/family_service.dart'; // Import FamilyService
+import 'package:hf_v3/features/family_structure/services/family_service.dart';
 
 // Provider to stream pending invitations for the current user
 final pendingInvitationsStreamProvider =
@@ -30,19 +30,17 @@ class NotificationsScreen extends ConsumerWidget {
       familyServiceProvider,
     ); // Get FamilyService to fetch family names
 
+    // Observa el estado de carga del FamilyController
+    final isJoiningFamily = ref.watch(familyControllerProvider).isLoading;
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          appLocalizations.notificationsTitle,
-        ), // Corrected to use getter
-      ),
+      appBar: AppBar(title: Text(appLocalizations.notificationsTitle)),
       body: pendingInvitationsAsyncValue.when(
         data: (invitations) {
           if (invitations.isEmpty) {
             return Center(
               child: Text(
-                appLocalizations
-                    .noPendingInvitations, // Corrected to use getter
+                appLocalizations.noPendingInvitations,
                 style: Theme.of(context).textTheme.titleMedium,
                 textAlign: TextAlign.center,
               ),
@@ -118,35 +116,44 @@ class NotificationsScreen extends ConsumerWidget {
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           TextButton(
-                            onPressed: () async {
-                              try {
-                                if (!context.mounted) return;
-                                await familyService.declineInvitation(
-                                  invitation.invitationId,
-                                );
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        appLocalizations.invitationDeclined,
-                                      ),
-                                    ),
-                                  );
-                                }
-                              } catch (e) {
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        appLocalizations.invitationDeclineError(
-                                          e.toString(),
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                }
-                              }
-                            },
+                            // Deshabilita el botón si la operación de unirse está en curso
+                            onPressed: isJoiningFamily
+                                ? null
+                                : () async {
+                                    try {
+                                      if (!context.mounted) return;
+                                      await familyService.declineInvitation(
+                                        invitation.invitationId,
+                                      ); // Use new method
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              appLocalizations
+                                                  .invitationDeclined,
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    } catch (e) {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              appLocalizations
+                                                  .invitationDeclineError(
+                                                    e.toString(),
+                                                  ),
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  },
                             style: TextButton.styleFrom(
                               foregroundColor: Theme.of(
                                 context,
@@ -156,35 +163,47 @@ class NotificationsScreen extends ConsumerWidget {
                           ),
                           const SizedBox(width: 8),
                           ElevatedButton(
-                            onPressed: () async {
-                              try {
-                                if (!context.mounted) return;
-                                await familyController.joinFamily(
-                                  invitation.invitationCode,
-                                );
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        appLocalizations.invitationAccepted,
-                                      ),
-                                    ),
-                                  );
-                                }
-                              } catch (e) {
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        appLocalizations.invitationAcceptError(
-                                          e.toString(),
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                }
-                              }
-                            },
+                            // Deshabilita el botón si la operación de unirse está en curso
+                            onPressed: isJoiningFamily
+                                ? null
+                                : () async {
+                                    try {
+                                      if (!context.mounted) return;
+                                      await familyController.joinFamily(
+                                        invitation.invitationCode,
+                                      );
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              appLocalizations
+                                                  .invitationAccepted,
+                                            ),
+                                          ),
+                                        );
+                                        // Después de aceptar, es lógico salir de la pantalla de notificaciones
+                                        // ya que la invitación ya no está pendiente para este usuario.
+                                        Navigator.of(context).pop();
+                                      }
+                                    } catch (e) {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              appLocalizations
+                                                  .invitationAcceptError(
+                                                    e.toString(),
+                                                  ),
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Theme.of(
                                 context,

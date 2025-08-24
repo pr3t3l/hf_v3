@@ -8,17 +8,17 @@ import 'package:hf_v3/features/family_structure/data/models/family.dart'
 // Provider for FamilyController
 final familyControllerProvider =
     StateNotifierProvider<FamilyController, AsyncValue<void>>((ref) {
-  final familyService = ref.read(familyServiceProvider);
-  return FamilyController(familyService);
-});
+      final familyService = ref.read(familyServiceProvider);
+      return FamilyController(familyService);
+    });
 
 // Provider to stream the list of families the current user belongs to
 final userFamiliesStreamProvider =
     StreamProvider.autoDispose<List<family_model.Family>>((ref) {
-  // Use alias here
-  final familyService = ref.watch(familyServiceProvider);
-  return familyService.getUserFamiliesStream();
-});
+      // Use alias here
+      final familyService = ref.watch(familyServiceProvider);
+      return familyService.getUserFamiliesStream();
+    });
 
 // Provider to watch the currently active family
 final activeFamilyProvider = StateProvider<family_model.Family?>(
@@ -30,11 +30,13 @@ class FamilyController extends StateNotifier<AsyncValue<void>> {
 
   FamilyController(this._familyService) : super(const AsyncValue.data(null));
 
-  Future<void> createFamily(String familyName) async {
+  // Modifica el método para que devuelva el ID de la familia.
+  Future<String> createFamily(String familyName) async {
     state = const AsyncValue.loading();
     try {
-      await _familyService.createFamily(familyName);
+      final newFamily = await _familyService.createFamily(familyName);
       state = const AsyncValue.data(null); // Success
+      return newFamily.familyId; // Devuelve el ID de la familia
     } catch (e, st) {
       state = AsyncValue.error(e, st);
       rethrow;

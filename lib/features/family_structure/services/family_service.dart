@@ -23,6 +23,7 @@ final familyServiceProvider = Provider<FamilyService>(
 class FamilyService {
   final FirebaseFirestore _firestore;
   final FirebaseAuth _firebaseAuth;
+  // ignore: unused_field
   final Uuid _uuid = const Uuid();
   final FirebaseFunctions _functions =
       FirebaseFunctions.instance; // NEW: Initialize Firebase Functions
@@ -116,15 +117,19 @@ class FamilyService {
     try {
       final HttpsCallable callable = _functions.httpsCallable('joinFamily');
       final result = await callable.call({'invitationCode': invitationCode});
-      debugPrint('FamilyService: Respuesta de Cloud Function joinFamily: ${result.data}');
+      debugPrint(
+        'FamilyService: Respuesta de Cloud Function joinFamily: ${result.data}',
+      );
       if (result.data['status'] != 'success') {
         throw Exception(
           result.data['message'] ?? 'Error al unirse a la familia.',
         );
       }
       final String familyId = result.data['familyId'];
-      final familyDoc =
-          await _firestore.collection('families').doc(familyId).get();
+      final familyDoc = await _firestore
+          .collection('families')
+          .doc(familyId)
+          .get();
       return family_model.Family.fromFirestore(familyDoc);
     } on FirebaseFunctionsException catch (e) {
       debugPrint(
@@ -335,8 +340,7 @@ class FamilyService {
   Future<String> getUserDisplayName(String userId) async {
     debugPrint('FamilyService: Obteniendo displayName para UID: $userId');
     try {
-      final userDoc =
-          await _firestore.collection('users').doc(userId).get();
+      final userDoc = await _firestore.collection('users').doc(userId).get();
       if (userDoc.exists) {
         return UserProfile.fromFirestore(userDoc).displayName;
       }
@@ -475,17 +479,17 @@ class FamilyService {
       throw Exception('User is not a member of this family.');
     }
 
-    final updatedMembers =
-        family.memberUserIds.where((m) => m.userId != userId).toList();
-    final updatedAdmins =
-        family.adminUserIds.where((id) => id != userId).toList();
+    final updatedMembers = family.memberUserIds
+        .where((m) => m.userId != userId)
+        .toList();
+    final updatedAdmins = family.adminUserIds
+        .where((id) => id != userId)
+        .toList();
 
     if (family.adminUserIds.contains(userId) &&
         updatedAdmins.isEmpty &&
         updatedMembers.isNotEmpty) {
-      debugPrint(
-        'FamilyService: Error - Último administrador no puede salir.',
-      );
+      debugPrint('FamilyService: Error - Último administrador no puede salir.');
       throw Exception('Cannot leave the family as the only administrator.');
     }
 
