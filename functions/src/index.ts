@@ -116,8 +116,9 @@ export const inviteFamilyMember = functions.https.onCall(
 
       batch.set(db.collection("invitations").doc(invitationId), newInvitation);
       // Actualizar usersPending en el documento de la familia
-      batch.update(familyRef, { usersPending: admin.firestore.FieldValue.arrayUnion(invitedUserId) });
-
+      batch.update(familyRef, {
+        usersPending: admin.firestore.FieldValue.arrayUnion(invitedUserId),
+      });
     } else {
       // Escenario 2: Añadir un miembro no registrado (por nombre)
       // No requiere una cuenta de usuario en la app.
@@ -212,8 +213,11 @@ export const joinFamily = functions.https.onCall(
       throw new functions.https.HttpsError("not-found", "Familia no existe.");
     }
 
-    const familyData = familyDoc.data();
-    const userData = userDoc.data();
+    const familyData = familyDoc.data() as {
+      memberUserIds: any[];
+      usersPending: string[];
+    };
+    const userData = userDoc.data() as { displayName?: string };
 
     // 4. Validar que el usuario no sea ya un miembro
     if (familyData?.memberUserIds?.some((m: any) => m.userId === userId)) {
@@ -231,11 +235,11 @@ export const joinFamily = functions.https.onCall(
     const newMember = {
       userId,
       role: invitationData.initialRole || "child",
-      displayName: userData!.displayName,
+      displayName: userData.displayName ?? "Usuario",
     };
 
-    const updatedMemberUserIds = [...familyData!.memberUserIds, newMember];
-    const updatedUsersPending = familyData!.usersPending.filter(
+    const updatedMemberUserIds = [...familyData.memberUserIds, newMember];
+    const updatedUsersPending = familyData.usersPending.filter(
       (uid: string) => uid !== userId
     );
     
