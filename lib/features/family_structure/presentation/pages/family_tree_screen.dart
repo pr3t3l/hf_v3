@@ -1,12 +1,15 @@
+// hf_v3/lib/features/family_structure/presentation/pages/family_tree_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hf_v3/features/family_structure/data/models/family.dart';
+import 'package:hf_v3/features/family_structure/data/models/family.dart'
+    as family_model;
 import 'package:hf_v3/features/family_structure/data/models/family_member.dart';
 import 'package:hf_v3/features/family_structure/services/family_service.dart';
 import 'package:hf_v3/l10n/app_localizations.dart';
 
 class FamilyTreeScreen extends ConsumerWidget {
-  final Family family;
+  final family_model.Family family;
   const FamilyTreeScreen({super.key, required this.family});
 
   String _translateRelationship(BuildContext context, String type) {
@@ -24,7 +27,7 @@ class FamilyTreeScreen extends ConsumerWidget {
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withAlpha((255 * 0.1).toInt()),
             spreadRadius: 1,
             blurRadius: 3,
             offset: const Offset(0, 2),
@@ -86,7 +89,7 @@ class FamilyTreeScreen extends ConsumerWidget {
             return Center(child: Text('Error: ${snapshot.error}'));
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text(appLocalizations.noRegisteredMembers));
+            return const Center(child: Text("No registered members found"));
           }
 
           final members = snapshot.data!;

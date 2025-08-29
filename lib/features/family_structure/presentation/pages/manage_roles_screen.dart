@@ -1,3 +1,5 @@
+// hf_v3/lib/features/family_structure/presentation/pages/manage_roles_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hf_v3/l10n/app_localizations.dart';
@@ -91,7 +93,7 @@ class _ManageRolesScreenState extends ConsumerState<ManageRolesScreen> {
             return Center(child: Text('Error: ${snapshot.error}'));
           }
           if (!snapshot.hasData) {
-            return Center(child: Text(appLocalizations.memberNotFound));
+            return const Center(child: Text("Member not found"));
           }
 
           final member = snapshot.data!;

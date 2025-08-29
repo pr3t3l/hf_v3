@@ -82,7 +82,7 @@ export const inviteFamilyMember = functions.https.onCall(
       const invitedUserId = invitedUserDoc.id;
 
       // Verificar si ya es miembro o tiene una invitación pendiente
-      if (familyData.memberUserIds.includes(invitedUserId)) {
+      if (familyData.memberUserIds.some((m: any) => m.userId === invitedUserId)) {
         throw new functions.https.HttpsError(
           "already-exists",
           "Este usuario ya es miembro de la familia."
@@ -214,7 +214,6 @@ export const joinFamily = functions.https.onCall(
     if (!familyDoc.exists) {
       throw new functions.https.HttpsError("not-found", "La familia no existe.");
     }
-
 
     const familyData = familyDoc.data() as { memberUserIds: string[] };
     const userData = userDoc.data() as { displayName?: string };

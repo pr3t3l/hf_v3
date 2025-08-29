@@ -5,7 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:flutter/foundation.dart';
-import 'package:cloud_functions/cloud_functions.dart';
+import 'package:cloud_functions/cloud_functions.dart'; // NEW: Import Cloud Functions
 
 // Common models
 import 'package:hf_v3/common/models/user_profile.dart';
@@ -25,7 +25,8 @@ class FamilyService {
   final FirebaseAuth _firebaseAuth;
   // ignore: unused_field
   final Uuid _uuid = const Uuid();
-  final FirebaseFunctions _functions = FirebaseFunctions.instance;
+  final FirebaseFunctions _functions =
+      FirebaseFunctions.instance; // NEW: Initialize Firebase Functions
 
   FamilyService(this._firestore, this._firebaseAuth);
 
@@ -130,8 +131,10 @@ class FamilyService {
         );
       }
       final String familyId = result.data['familyId'];
-      final familyDoc =
-          await _firestore.collection('families').doc(familyId).get();
+      final familyDoc = await _firestore
+          .collection('families')
+          .doc(familyId)
+          .get();
       return family_model.Family.fromFirestore(familyDoc);
     } on FirebaseFunctionsException catch (e) {
       debugPrint(
@@ -223,48 +226,6 @@ class FamilyService {
     });
   }
 
-  // --- NEW: Get Family Members Stream ---
-  Stream<List<FamilyMember>> getFamilyMembersStream(String familyId) {
-    return _firestore
-        .collection('families')
-        .doc(familyId)
-        .collection('members')
-        .snapshots()
-        .map((snapshot) {
-      return snapshot.docs.map((doc) {
-        final data = doc.data();
-        return FamilyMember(
-          userId: doc.id,
-          role: data['role'] ?? 'member',
-          displayName: data['displayName'] ?? 'Unknown Member',
-        );
-      }).toList();
-    });
-  }
-
-  // --- NEW: Get Single Family Member Stream ---
-  Stream<FamilyMember> getFamilyMemberStream(
-      String familyId, String memberId) {
-    return _firestore
-        .collection('families')
-        .doc(familyId)
-        .collection('members')
-        .doc(memberId)
-        .snapshots()
-        .map((doc) {
-      if (!doc.exists) {
-        throw Exception(
-            'Member not found in family $familyId with id $memberId');
-      }
-      final data = doc.data()!;
-      return FamilyMember(
-        userId: doc.id,
-        role: data['role'] ?? 'member',
-        displayName: data['displayName'] ?? 'Unknown Member',
-      );
-    });
-  }
-
   // --- Fetch User's Families ---
   Stream<List<family_model.Family>> getUserFamiliesStream() {
     debugPrint(
@@ -276,11 +237,7 @@ class FamilyService {
       );
       return Stream.value([]);
     }
-    return _firestore
-        .collection('users')
-        .doc(currentUserId)
-        .snapshots()
-        .asyncMap((
+    return _firestore.collection('users').doc(currentUserId).snapshots().asyncMap((
       userSnapshot,
     ) async {
       if (!userSnapshot.exists) {
@@ -302,8 +259,10 @@ class FamilyService {
         'FamilyService: Cargando ${userProfile.familyIds.length} familias del usuario.',
       );
       for (final familyId in userProfile.familyIds) {
-        final familyDoc =
-            await _firestore.collection('families').doc(familyId).get();
+        final familyDoc = await _firestore
+            .collection('families')
+            .doc(familyId)
+            .get();
         if (familyDoc.exists) {
           families.add(family_model.Family.fromFirestore(familyDoc));
         } else {
@@ -334,8 +293,9 @@ class FamilyService {
         .where('status', isEqualTo: 'pending')
         .snapshots()
         .map(
-          (snapshot) =>
-              snapshot.docs.map((doc) => Invitation.fromFirestore(doc)).toList(),
+          (snapshot) => snapshot.docs
+              .map((doc) => Invitation.fromFirestore(doc))
+              .toList(),
         );
   }
 
@@ -360,8 +320,10 @@ class FamilyService {
       'FamilyService: Obteniendo nombre de familia para ID: $familyId',
     );
     try {
-      final familyDoc =
-          await _firestore.collection('families').doc(familyId).get();
+      final familyDoc = await _firestore
+          .collection('families')
+          .doc(familyId)
+          .get();
       if (familyDoc.exists) {
         final familyName = family_model.Family.fromFirestore(
           familyDoc,
@@ -431,17 +393,6 @@ class FamilyService {
     });
   }
 
-  // --- NEW: Get all members from the subcollection ---
-  Stream<List<FamilyMember>> getFamilyMembersStream(String familyId) {
-    return _firestore
-        .collection('families')
-        .doc(familyId)
-        .collection('members')
-        .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => FamilyMember.fromFirestore(doc))
-            .toList());
-  }
 
   // --- Assign/Modify Member Role (Refactored) ---
   Future<void> updateMemberRole(
@@ -524,8 +475,9 @@ class FamilyService {
 
     try {
       await familyRef.update({
-        'unregisteredMembers':
-            updatedUnregisteredMembers.map((m) => m.toFirestore()).toList(),
+        'unregisteredMembers': updatedUnregisteredMembers
+            .map((m) => m.toFirestore())
+            .toList(),
       });
       debugPrint(
         'FamilyService: Miembro no registrado eliminado en Firestore.',

@@ -2,13 +2,12 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hf_v3/features/family_structure/data/models/family_member.dart';
 import 'package:hf_v3/l10n/app_localizations.dart';
 import 'package:hf_v3/features/family_structure/data/models/family_member.dart';
 import 'package:hf_v3/features/family_structure/presentation/controllers/family_controller.dart';
 import 'package:hf_v3/features/family_structure/presentation/pages/invite_member_screen.dart';
 import 'package:hf_v3/features/family_structure/presentation/pages/manage_roles_screen.dart';
-import 'package:hf_v3/features/family_structure/services/family_service.dart';
+import 'package:hf_v3/features/family_structure/services/family_service.dart'; // Needed for currentUserId
 import 'package:hf_v3/features/family_structure/presentation/pages/family_tree_screen.dart';
 
 class FamilyDetailsScreen extends ConsumerWidget {
@@ -151,8 +150,8 @@ class FamilyDetailsScreen extends ConsumerWidget {
                     }
                     if (!memberSnapshot.hasData ||
                         memberSnapshot.data!.isEmpty) {
-                      return Center(
-                        child: Text(appLocalizations.noRegisteredMembers),
+                      return const Center(
+                        child: Text("No registered members found"),
                       );
                     }
 
@@ -366,7 +365,7 @@ class FamilyDetailsScreen extends ConsumerWidget {
                           Navigator.of(context).push(
                             MaterialPageRoute(
                               builder: (context) =>
-                                  FamilyTreeScreen(familyId: family.familyId),
+                                  FamilyTreeScreen(family: family),
                             ),
                           );
                         },

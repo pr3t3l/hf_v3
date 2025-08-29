@@ -262,5 +262,7 @@
     }
   },
   "confirmPasswordRequired": "Confirm Password is required.",
-  "emailHint": "Enter email"
+  "emailHint": "Enter email",
+  "noRegisteredMembers": "No registered members found",
+  "memberNotFound": "Member not found"
 }
