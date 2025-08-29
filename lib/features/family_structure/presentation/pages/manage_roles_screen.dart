@@ -1,23 +1,22 @@
-// hf_v3/lib/features/family_structure/presentation/pages/manage_roles_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hf_v3/l10n/app_localizations.dart';
+import 'package:hf_v3/features/family_structure/data/models/family_member.dart';
 import 'package:hf_v3/features/family_structure/presentation/controllers/family_controller.dart';
-import 'package:hf_v3/features/family_structure/services/family_service.dart'; // Importar FamilyService
+import 'package:hf_v3/features/family_structure/services/family_service.dart';
+import 'package:hf_v3/l10n/app_localizations.dart';
+
+final memberDocumentProvider = StreamProvider.autoDispose
+    .family<FamilyMember, ({String familyId, String memberId})>(
+        (ref, ids) => ref.watch(familyServiceProvider).getMemberDocument(ids.familyId, ids.memberId));
 
 class ManageRolesScreen extends ConsumerStatefulWidget {
   final String familyId;
-  final String memberUserId; // The user whose role is being managed
-  // final String currentRole; // Ya no es necesario pasar currentRole directamente
-  // final String memberDisplayName; // Ya no es necesario pasar memberDisplayName directamente
+  final String memberUserId;
 
   const ManageRolesScreen({
     super.key,
     required this.familyId,
     required this.memberUserId,
-    // required this.currentRole,
-    // required this.memberDisplayName,
   });
 
   @override
@@ -26,10 +25,7 @@ class ManageRolesScreen extends ConsumerStatefulWidget {
 
 class _ManageRolesScreenState extends ConsumerState<ManageRolesScreen> {
   String? _selectedRole;
-  String? _currentRoleFromFetch; // Para almacenar el rol actual del miembro
-  String?
-  _memberDisplayNameFromFetch; // Para almacenar el displayName del miembro
-  bool _isLoadingMemberDetails = true; // Para controlar el estado de carga
+
   final List<String> _availableRoles = [
     'parent',
     'child',
@@ -40,68 +36,16 @@ class _ManageRolesScreenState extends ConsumerState<ManageRolesScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchMemberDetails();
-  }
-
-  Future<void> _fetchMemberDetails() async {
-    setState(() {
-      _isLoadingMemberDetails = true;
-    });
-    try {
-      final familyService = ref.read(familyServiceProvider);
-      final memberDetails = await familyService.getMemberDocument(
-        widget.familyId,
-        widget.memberUserId,
-      );
-      if (memberDetails != null) {
-        setState(() {
-          _currentRoleFromFetch = memberDetails['role'] as String;
-          _selectedRole = _currentRoleFromFetch;
-          _memberDisplayNameFromFetch = memberDetails['displayName'] as String;
-        });
-      } else {
-        // Manejar caso donde el miembro no se encuentra
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                AppLocalizations.of(
-                  context,
-                )!.errorLoadingFamilyDetails('Member not found.'),
-              ),
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-          );
-          Navigator.of(context).pop();
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              AppLocalizations.of(
-                context,
-              )!.errorLoadingFamilyDetails(e.toString()),
-            ),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
-        Navigator.of(context).pop();
-      }
-    } finally {
-      setState(() {
-        _isLoadingMemberDetails = false;
-      });
-    }
+    _selectedRole = widget.currentRole;
   }
 
   String _getRoleTranslation(String role, AppLocalizations localizations) {
-    return localizations.roleLabel(role);
+    final translation = localizations.roleLabel(role);
+    return translation.isNotEmpty ? translation : role;
   }
 
   Future<void> _updateRole() async {
-    if (_selectedRole == null || _selectedRole == _currentRoleFromFetch) {
+    if (_selectedRole == null || _selectedRole == widget.currentRole) {
       if (mounted) {
         Navigator.of(context).pop();
       }
@@ -151,17 +95,6 @@ class _ManageRolesScreenState extends ConsumerState<ManageRolesScreen> {
     final familyState = ref.watch(familyControllerProvider);
     final appLocalizations = AppLocalizations.of(context)!;
 
-    if (_isLoadingMemberDetails) {
-      return Scaffold(
-        appBar: AppBar(title: Text(appLocalizations.manageRolesTitle)),
-        body: Center(
-          child: CircularProgressIndicator(
-            color: Theme.of(context).colorScheme.primary,
-          ),
-        ),
-      );
-    }
-
     return Scaffold(
       appBar: AppBar(title: Text(appLocalizations.manageRolesTitle)),
       body: Center(
@@ -172,19 +105,15 @@ class _ManageRolesScreenState extends ConsumerState<ManageRolesScreen> {
             children: [
               Text(
                 appLocalizations.manageRoleFor(
-                  _memberDisplayNameFromFetch ??
-                      'Cargando...', // Usar el nombre obtenido
-                ),
+                  widget.memberDisplayName,
+                ), // Use display name here
                 style: Theme.of(context).textTheme.titleLarge,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16.0),
               Text(
                 appLocalizations.currentRoleLabel(
-                  _getRoleTranslation(
-                    _currentRoleFromFetch ?? 'Cargando...',
-                    appLocalizations,
-                  ),
+                  _getRoleTranslation(widget.currentRole, appLocalizations),
                 ),
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
@@ -198,7 +127,9 @@ class _ManageRolesScreenState extends ConsumerState<ManageRolesScreen> {
                 items: _availableRoles.map((String role) {
                   return DropdownMenuItem<String>(
                     value: role,
-                    child: Text(_getRoleTranslation(role, appLocalizations)),
+                    child: Text(
+                      _getRoleTranslation(role, appLocalizations),
+                    ), // Localize roles
                   );
                 }).toList(),
                 onChanged: (String? newValue) {

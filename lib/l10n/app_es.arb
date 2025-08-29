@@ -262,7 +262,5 @@
     }
   },
   "confirmPasswordRequired": "Confirmar contraseña es obligatorio.",
-  "emailHint": "Introduce correo electrónico",
-  "noRegisteredMembers": "No se encontraron miembros registrados",
-  "memberNotFound": "Miembro no encontrado"
+  "emailHint": "Introduce correo electrónico"
 }

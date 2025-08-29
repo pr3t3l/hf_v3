@@ -1,9 +1,7 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check if a user is signed in.
     function isSignedIn() {
       return request.auth != null;
     }
@@ -11,62 +9,55 @@ service cloud.firestore {
     // Helper function to check if a user is an admin of a specific family.
     function isFamilyAdmin(familyId) {
       let familyDoc = get(/databases/$(database)/documents/families/$(familyId));
-      // The user is an admin if they are signed in, the family document exists,
-      // and their UID is in the adminUserIds list.
       return isSignedIn() &&
              familyDoc.exists &&
              (request.auth.uid in familyDoc.data.adminUserIds);
     }
 
-    // Rules for the 'users' collection.
+    // Helper function to check if a user is a member of a specific family.
+    function isFamilyMember(familyId) {
+      let familyDoc = get(/databases/$(database)/documents/families/$(familyId));
+      return isSignedIn() &&
+             familyDoc.exists &&
+             (request.auth.uid in familyDoc.data.memberUserIds);
+    }
+
     match /users/{userId} {
-      // Users can create their own profile, and can only read/update/delete their own.
       allow create: if isSignedIn() && request.auth.uid == userId;
       allow read, update, delete: if isSignedIn() && request.auth.uid == userId;
     }
 
-    // Rules for the 'families' collection.
     match /families/{familyId} {
-      // A user is a member if their UID is in the memberUserIds list.
-      // This rule now works correctly because memberUserIds is a List<String>.
-      function isMember() {
+      // This function is now context-aware of the document being read/written.
+      function isMemberInDoc() {
         return isSignedIn() &&
                request.auth.uid in resource.data.memberUserIds;
       }
-
-      // An admin is defined in the document's adminUserIds list.
-      function isAdmin() {
-        return isSignedIn() &&
-               request.auth.uid in resource.data.adminUserIds;
-      }
       
-      // Members and admins can read the family document.
-      allow read: if isMember() || isAdmin();
-      // Only admins can update the family document.
-      allow update: if isAdmin();
-      // Any signed-in user can create a new family.
+      allow read: if isMemberInDoc();
+      // Allow members to update the family doc (e.g. to leave)
+      // and admins to do anything.
+      allow update: if isFamilyAdmin(familyId) || isMemberInDoc();
       allow create: if isSignedIn();
     }
 
-    // NEW: Rules for the 'members' subcollection within each family.
+    // Rules for the new 'members' subcollection
     match /families/{familyId}/members/{memberUserId} {
-      // An admin can read any member document.
-      // A user can read their own member document.
-      allow read: if isFamilyAdmin(familyId) || (isSignedIn() && request.auth.uid == memberUserId);
+      // Any member of the family can read the details of any other member.
+      allow read: if isFamilyMember(familyId);
 
-      // An admin can update or delete any member document.
-      allow update, delete: if isFamilyAdmin(familyId);
+      // Only admins can update member documents (e.g., change roles).
+      allow update: if isFamilyAdmin(familyId);
 
-      // An admin can create a member document.
-      // A user can create their OWN member document (e.g., when joining a family).
+      // Admins can delete any member. A user can also delete their OWN member document.
+      allow delete: if isFamilyAdmin(familyId) || (isSignedIn() && request.auth.uid == memberUserId);
+
+      // A user can create their OWN member document (when creating/joining a family). Admins can also create.
       allow create: if isFamilyAdmin(familyId) || (isSignedIn() && request.auth.uid == memberUserId);
     }
 
-    // Rules for the 'invitations' collection.
     match /invitations/{invitationId} {
-      // Any signed-in user can create an invitation (via cloud function).
       allow create: if isSignedIn();
-      // Only the invited user can read or update their own invitation.
       allow read, update: if isSignedIn() && request.auth.uid == resource.data.invitedUserId;
     }
   }
