@@ -3,8 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hf_v3/l10n/app_localizations.dart';
+import 'package:hf_v3/features/family_structure/data/models/family_member.dart';
 import 'package:hf_v3/features/family_structure/presentation/controllers/family_controller.dart';
-// Removed direct imports for Family, FamilyMember, UnregisteredMember as they are accessed via family object
 import 'package:hf_v3/features/family_structure/presentation/pages/invite_member_screen.dart';
 import 'package:hf_v3/features/family_structure/presentation/pages/manage_roles_screen.dart';
 import 'package:hf_v3/features/family_structure/services/family_service.dart'; // Needed for currentUserId
@@ -130,45 +130,65 @@ class FamilyDetailsScreen extends ConsumerWidget {
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 8),
-                // Registered Members List
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics:
-                      const NeverScrollableScrollPhysics(), // Disable scrolling for nested list
-                  itemCount: family.memberUserIds.length,
-                  itemBuilder: (context, index) {
-                    final member = family.memberUserIds[index];
-                    return Card(
-                      margin: const EdgeInsets.symmetric(vertical: 4.0),
-                      child: ListTile(
-                        leading: const Icon(Icons.person),
-                        title: Text(member.displayName),
-                        subtitle: Text(
-                          getRoleTranslation(member.role),
-                        ), // Corrected to use method
-                        trailing:
-                            isAdmin &&
-                                member.userId !=
-                                    currentUserId // Admins can manage others
-                            ? IconButton(
-                                icon: const Icon(Icons.edit),
-                                onPressed: () {
-                                  // Navigate to ManageRolesScreen for this member
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (context) => ManageRolesScreen(
-                                        familyId: family.familyId,
-                                        memberUserId: member.userId,
-                                        currentRole: member.role,
-                                        memberDisplayName: member
-                                            .displayName, // Pass display name
-                                      ),
-                                    ),
-                                  );
-                                },
-                              )
-                            : null,
-                      ),
+                // Registered Members List (Refactored with StreamBuilder)
+                StreamBuilder<List<FamilyMember>>(
+                  stream: familyService.getFamilyMembersStream(familyId),
+                  builder: (context, memberSnapshot) {
+                    if (memberSnapshot.connectionState ==
+                        ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (memberSnapshot.hasError) {
+                      return Center(
+                        child: Text(
+                          'Error: ${memberSnapshot.error}',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                      );
+                    }
+                    if (!memberSnapshot.hasData ||
+                        memberSnapshot.data!.isEmpty) {
+                      return Center(
+                        child: Text(appLocalizations.noRegisteredMembers),
+                      );
+                    }
+
+                    final members = memberSnapshot.data!;
+
+                    return ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: members.length,
+                      itemBuilder: (context, index) {
+                        final member = members[index];
+                        return Card(
+                          margin: const EdgeInsets.symmetric(vertical: 4.0),
+                          child: ListTile(
+                            leading: const Icon(Icons.person),
+                            title: Text(member.displayName),
+                            subtitle: Text(getRoleTranslation(member.role)),
+                            trailing: isAdmin && member.userId != currentUserId
+                                ? IconButton(
+                                    icon: const Icon(Icons.edit),
+                                    onPressed: () {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              ManageRolesScreen(
+                                            familyId: family.familyId,
+                                            memberUserId: member.userId,
+                                            // The member object from the stream now has all the info
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  )
+                                : null,
+                          ),
+                        );
+                      },
                     );
                   },
                 ),

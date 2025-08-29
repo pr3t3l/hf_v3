@@ -115,10 +115,18 @@ export const inviteFamilyMember = functions.https.onCall(
       };
 
       batch.set(db.collection("invitations").doc(invitationId), newInvitation);
-      // Actualizar usersPending en el documento de la familia
-      batch.update(familyRef, {
-        usersPending: admin.firestore.FieldValue.arrayUnion(invitedUserId),
-      });
+
+      // Actualizar el documento de la familia
+      const familyUpdateData: { [key: string]: any } = {
+          usersPending: admin.firestore.FieldValue.arrayUnion(invitedUserId),
+      };
+
+      // FIX: Si el rol inicial es 'administrator', añadir también a 'adminUserIds' al invitar.
+      if (initialRole === "administrator") {
+          familyUpdateData.adminUserIds = admin.firestore.FieldValue.arrayUnion(invitedUserId);
+      }
+      batch.update(familyRef, familyUpdateData);
+
     } else {
       // Escenario 2: Añadir un miembro no registrado (por nombre)
       // No requiere una cuenta de usuario en la app.
@@ -163,7 +171,7 @@ export const inviteFamilyMember = functions.https.onCall(
 );
 
 // =================================================================
-// Cloud Function: joinFamily
+// Cloud Function: joinFamily (Refactored)
 // Permite a un usuario aceptar una invitación para unirse a una familia.
 // =================================================================
 export const joinFamily = functions.https.onCall(
@@ -173,10 +181,7 @@ export const joinFamily = functions.https.onCall(
 
     // 1. Autenticación del usuario
     if (!userId) {
-      throw new functions.https.HttpsError(
-        "unauthenticated",
-        "El usuario no está autenticado."
-      );
+      throw new functions.https.HttpsError("unauthenticated", "El usuario no está autenticado.");
     }
 
     const db = admin.firestore();
@@ -190,17 +195,14 @@ export const joinFamily = functions.https.onCall(
       .get();
 
     if (invitationQuery.empty) {
-      throw new functions.https.HttpsError(
-        "not-found",
-        "Invitación no encontrada o ya no es válida."
-      );
+      throw new functions.https.HttpsError("not-found", "Invitación no encontrada o ya no es válida.");
     }
 
     const invitationDoc = invitationQuery.docs[0];
     const invitationData = invitationDoc.data();
     const familyId = invitationData.familyId;
 
-    // 3. Obtener los documentos del usuario y de la familia en paralelo (Promise.all)
+    // 3. Obtener los documentos del usuario y de la familia en paralelo
     const [userDoc, familyDoc] = await Promise.all([
       db.collection("users").doc(userId).get(),
       db.collection("families").doc(familyId).get(),
@@ -210,67 +212,59 @@ export const joinFamily = functions.https.onCall(
       throw new functions.https.HttpsError("not-found", "Perfil de usuario no encontrado.");
     }
     if (!familyDoc.exists) {
-      throw new functions.https.HttpsError("not-found", "Familia no existe.");
+      throw new functions.https.HttpsError("not-found", "La familia no existe.");
     }
 
-    const familyData = familyDoc.data() as {
-      memberUserIds: any[];
-      usersPending: string[];
-    };
+    const familyData = familyDoc.data() as { memberUserIds: string[] };
     const userData = userDoc.data() as { displayName?: string };
 
-    // 4. Validar que el usuario no sea ya un miembro
-    if (familyData?.memberUserIds?.some((m: any) => m.userId === userId)) {
-      throw new functions.https.HttpsError(
-        "already-exists",
-        "Ya eres miembro de esta familia."
-      );
+    // 4. Validar que el usuario no sea ya un miembro (ahora en un array de strings)
+    if (familyData?.memberUserIds?.includes(userId)) {
+      throw new functions.https.HttpsError("already-exists", "Ya eres miembro de esta familia.");
     }
 
     const batch = db.batch();
+    const familyRef = familyDoc.ref;
 
-    // 5. Actualizar el documento de la familia:
-    //    - Mover al usuario de 'usersPending' a 'memberUserIds'.
-    //    - Importante: No usar arrayUnion para objetos complejos. Reconstruimos el array.
-    const newMember = {
-      userId,
-      role: invitationData.initialRole || "child",
-      displayName: userData.displayName ?? "Usuario",
+    // 5. Actualizar el documento de la familia
+    const familyUpdateData: { [key: string]: any } = {
+      memberUserIds: admin.firestore.FieldValue.arrayUnion(userId),
+      usersPending: admin.firestore.FieldValue.arrayRemove(userId),
     };
 
-    const updatedMemberUserIds = [...familyData.memberUserIds, newMember];
-    const updatedUsersPending = familyData.usersPending.filter(
-      (uid: string) => uid !== userId
-    );
-    
-    batch.update(familyDoc.ref, {
-      memberUserIds: updatedMemberUserIds,
-      usersPending: updatedUsersPending,
+    // Si el rol inicial es 'administrator', añadir también a 'adminUserIds'
+    if (invitationData.initialRole === "administrator") {
+      familyUpdateData.adminUserIds = admin.firestore.FieldValue.arrayUnion(userId);
+    }
+    batch.update(familyRef, familyUpdateData);
+
+    // 6. Crear el nuevo documento del miembro en la subcolección /members
+    const memberRef = familyRef.collection("members").doc(userId);
+    batch.set(memberRef, {
+      role: invitationData.initialRole || "child",
+      displayName: userData.displayName ?? "Usuario",
+      joinedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
-    // 6. Actualizar el documento del usuario: añadir el familyId
+    // 7. Actualizar el documento del usuario: añadir el familyId
     batch.update(userDoc.ref, {
       familyIds: admin.firestore.FieldValue.arrayUnion(familyId),
     });
 
-    // 7. Actualizar el estado de la invitación a "accepted"
+    // 8. Actualizar el estado de la invitación a "accepted"
     batch.update(invitationDoc.ref, {
       status: "accepted",
     });
 
-    // 8. Crear una relación inicial en /familyRelationships (IDEMPOTENTE)
-    // Verificar si la relación ya existe para evitar duplicados.
-    // Se verifica en ambas direcciones (A-B y B-A)
+    // 9. Crear una relación inicial en /familyRelationships (sin cambios)
     const member1Id = invitationData.invitedByUserId;
     const member2Id = userId;
-
     const existingRelationshipQuery = await db.collection("familyRelationships")
       .where("familyId", "==", familyId)
       .where("member1Ref.id", "==", member1Id)
       .where("member2Ref.id", "==", member2Id)
       .limit(1)
       .get();
-
     const existingRelationshipQueryReverse = await db.collection("familyRelationships")
       .where("familyId", "==", familyId)
       .where("member1Ref.id", "==", member2Id)
@@ -297,7 +291,7 @@ export const joinFamily = functions.https.onCall(
       console.log("Ya existe una relación entre estos miembros, se omite la creación.");
     }
 
-    // 9. Commit del lote de escrituras
+    // 10. Commit del lote de escrituras
     await batch.commit();
 
     return { status: "success", message: "¡Te has unido a la familia con éxito!", familyId };
