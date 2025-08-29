@@ -38,6 +38,7 @@ class _CreateFamilyScreenState extends ConsumerState<CreateFamilyScreen> {
 
           // Verifica si la nueva familia está presente en la lista actualizada.
           if (families.any((f) => f.familyId == newFamilyId)) {
+            if (!mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(
@@ -55,6 +56,7 @@ class _CreateFamilyScreenState extends ConsumerState<CreateFamilyScreen> {
               ),
             );
             // Navega de vuelta a la pantalla de selección de familia.
+            if (!mounted) return;
             Navigator.of(context).pop();
           } else {
             // Si por alguna razón la familia no aparece en el stream después de un tiempo,

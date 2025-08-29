@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:uuid/uuid.dart';
@@ -133,6 +132,32 @@ class FamilyService {
         .where('status', isEqualTo: 'pending')
         .snapshots()
         .map((s) => s.docs.map((d) => Invitation.fromFirestore(d)).toList());
+  }
+
+  Future<Invitation?> getInvitationByCode(String invitationCode) async {
+    final querySnapshot = await _firestore
+        .collection('invitations')
+        .where('invitationCode', isEqualTo: invitationCode)
+        .where('status', isEqualTo: 'pending')
+        .limit(1)
+        .get();
+
+    if (querySnapshot.docs.isNotEmpty) {
+      return Invitation.fromFirestore(querySnapshot.docs.first);
+    }
+    return null;
+  }
+
+  Future<String> getFamilyName(String familyId) async {
+    try {
+      final familyDoc = await _firestore.collection('families').doc(familyId).get();
+      if (familyDoc.exists) {
+        return family_model.Family.fromFirestore(familyDoc).familyName;
+      }
+      return 'Unknown Family';
+    } catch (e) {
+      return 'Error loading name';
+    }
   }
 
   // --- NEW: Member Subcollection Methods ---

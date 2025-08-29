@@ -33,130 +33,63 @@ class _ManageRolesScreenState extends ConsumerState<ManageRolesScreen> {
     'administrator',
   ];
 
-  @override
-  void initState() {
-    super.initState();
-    _selectedRole = widget.currentRole;
-  }
-
-  String _getRoleTranslation(String role, AppLocalizations localizations) {
-    final translation = localizations.roleLabel(role);
-    return translation.isNotEmpty ? translation : role;
-  }
-
-  Future<void> _updateRole() async {
-    if (_selectedRole == null || _selectedRole == widget.currentRole) {
-      if (mounted) {
-        Navigator.of(context).pop();
-      }
+  void _updateRole(FamilyMember member) async {
+    if (_selectedRole == null || _selectedRole == member.role) {
+      if (mounted) Navigator.of(context).pop();
       return;
     }
-
-    final familyController = ref.read(familyControllerProvider.notifier);
     try {
-      await familyController.updateMemberRole(
-        widget.familyId,
-        widget.memberUserId,
-        _selectedRole!,
-      );
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context)!.roleUpdatedSuccess),
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            margin: const EdgeInsets.all(16),
-          ),
-        );
-        Navigator.of(context).pop();
-      }
+      await ref.read(familyControllerProvider.notifier).updateMemberRole(
+            widget.familyId,
+            widget.memberUserId,
+            _selectedRole!,
+          );
+      if (mounted) Navigator.of(context).pop();
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            AppLocalizations.of(context)!.roleUpdatedError(e.toString()),
-            style: TextStyle(color: Theme.of(context).colorScheme.onError),
-          ),
-          backgroundColor: Theme.of(context).colorScheme.error,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          margin: const EdgeInsets.all(16),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final familyState = ref.watch(familyControllerProvider);
     final appLocalizations = AppLocalizations.of(context)!;
+    final memberAsyncValue = ref.watch(memberDocumentProvider((familyId: widget.familyId, memberId: widget.memberUserId)));
 
     return Scaffold(
       appBar: AppBar(title: Text(appLocalizations.manageRolesTitle)),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                appLocalizations.manageRoleFor(
-                  widget.memberDisplayName,
-                ), // Use display name here
-                style: Theme.of(context).textTheme.titleLarge,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16.0),
-              Text(
-                appLocalizations.currentRoleLabel(
-                  _getRoleTranslation(widget.currentRole, appLocalizations),
+      body: memberAsyncValue.when(
+        data: (member) {
+          _selectedRole ??= member.role;
+          return Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(appLocalizations.manageRoleFor(member.displayName), style: Theme.of(context).textTheme.titleLarge),
+                const SizedBox(height: 16.0),
+                Text(appLocalizations.currentRoleLabel(appLocalizations.roleLabel(member.role))),
+                const SizedBox(height: 24.0),
+                DropdownButtonFormField<String>(
+                  value: _selectedRole,
+                  items: _availableRoles.map((role) => DropdownMenuItem(value: role, child: Text(appLocalizations.roleLabel(role)))).toList(),
+                  onChanged: (value) => setState(() => _selectedRole = value),
+                  decoration: InputDecoration(labelText: appLocalizations.newRoleLabel),
                 ),
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 24.0),
-              DropdownButtonFormField<String>(
-                value: _selectedRole,
-                decoration: InputDecoration(
-                  labelText: appLocalizations.newRoleLabel,
-                ),
-                hint: Text(appLocalizations.selectNewRoleHint),
-                items: _availableRoles.map((String role) {
-                  return DropdownMenuItem<String>(
-                    value: role,
-                    child: Text(
-                      _getRoleTranslation(role, appLocalizations),
-                    ), // Localize roles
-                  );
-                }).toList(),
-                onChanged: (String? newValue) {
-                  setState(() {
-                    _selectedRole = newValue;
-                  });
-                },
-                validator: (value) {
-                  if (value == null) {
-                    return appLocalizations.newRoleRequired;
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 24.0),
-              familyState.isLoading
-                  ? CircularProgressIndicator(
-                      color: Theme.of(context).colorScheme.primary,
-                    )
-                  : ElevatedButton(
-                      onPressed: _updateRole,
-                      style: Theme.of(context).elevatedButtonTheme.style,
-                      child: Text(appLocalizations.updateRoleButton),
-                    ),
-            ],
-          ),
-        ),
+                const SizedBox(height: 24.0),
+                ref.watch(familyControllerProvider).isLoading
+                    ? const CircularProgressIndicator()
+                    : ElevatedButton(
+                        onPressed: () => _updateRole(member),
+                        child: Text(appLocalizations.updateRoleButton),
+                      ),
+              ],
+            ),
+          );
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, stack) => Center(child: Text('Error: $err')),
       ),
     );
   }
