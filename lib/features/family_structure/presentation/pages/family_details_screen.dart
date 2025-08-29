@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hf_v3/features/family_structure/data/models/family.dart' as family_model;
+import 'package:hf_v3/features/family_structure/data/models/family.dart'
+    as family_model;
 import 'package:hf_v3/features/family_structure/data/models/family_member.dart';
 import 'package:hf_v3/features/family_structure/presentation/controllers/family_controller.dart';
 import 'package:hf_v3/features/family_structure/presentation/pages/invite_member_screen.dart';
@@ -27,12 +28,7 @@ class FamilyDetailsScreen extends ConsumerWidget {
           loading: () => const Text(''),
           error: (_, __) => const Text(''),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.exit_to_app),
-            onPressed: () => _leaveFamily(context, ref, familyId, appLocalizations),
-          ),
-        ],
+        actions: const [],
       ),
       body: familyAsyncValue.when(
         data: (family) {
@@ -42,26 +38,68 @@ class FamilyDetailsScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildSectionTitle(context, appLocalizations.registeredMembersTitle),
-                _buildMembersList(context, ref, familyId, isAdmin, currentUserId, appLocalizations),
+                _buildSectionTitle(
+                  context,
+                  appLocalizations.registeredMembersTitle,
+                ),
+                _buildMembersList(
+                  context,
+                  ref,
+                  familyId,
+                  isAdmin,
+                  currentUserId,
+                  appLocalizations,
+                ),
                 const SizedBox(height: 24),
                 if (family.usersPending.isNotEmpty) ...[
-                  _buildSectionTitle(context, appLocalizations.pendingMembersTitle),
-                  _buildPendingList(familyService, family.usersPending, appLocalizations),
+                  _buildSectionTitle(
+                    context,
+                    appLocalizations.pendingMembersTitle,
+                  ),
+                  _buildPendingList(
+                    familyService,
+                    family.usersPending,
+                    appLocalizations,
+                  ),
                   const SizedBox(height: 24),
                 ],
-                _buildSectionTitle(context, appLocalizations.unregisteredMembersTitle),
-                _buildUnregisteredList(context, ref, family, isAdmin, appLocalizations),
+                _buildSectionTitle(
+                  context,
+                  appLocalizations.unregisteredMembersTitle,
+                ),
+                _buildUnregisteredList(
+                  context,
+                  ref,
+                  family,
+                  isAdmin,
+                  appLocalizations,
+                ),
                 const SizedBox(height: 24),
                 if (isAdmin)
                   ElevatedButton(
-                    onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => InviteMemberScreen(familyId: family.familyId))),
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            InviteMemberScreen(familyId: family.familyId),
+                      ),
+                    ),
                     child: Text(appLocalizations.inviteMemberButton),
                   ),
                 const SizedBox(height: 16),
                 ElevatedButton(
-                  onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => FamilyTreeScreen(family: family))),
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => FamilyTreeScreen(family: family),
+                    ),
+                  ),
                   child: Text(appLocalizations.viewFamilyTreeButton),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                  onPressed: () =>
+                      _leaveFamily(context, ref, familyId, appLocalizations),
+                  child: Text(appLocalizations.leaveFamilyButton),
                 ),
               ],
             ),
@@ -73,15 +111,26 @@ class FamilyDetailsScreen extends ConsumerWidget {
     );
   }
 
-  void _leaveFamily(BuildContext context, WidgetRef ref, String familyId, AppLocalizations localizations) async {
+  void _leaveFamily(
+    BuildContext context,
+    WidgetRef ref,
+    String familyId,
+    AppLocalizations localizations,
+  ) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(localizations.confirmLeaveFamilyTitle),
         content: Text(localizations.confirmLeaveFamilyMessage),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: Text(localizations.cancelButton)),
-          TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: Text(localizations.leaveButton)),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(localizations.cancelButton),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(localizations.leaveButton),
+          ),
         ],
       ),
     );
@@ -90,7 +139,10 @@ class FamilyDetailsScreen extends ConsumerWidget {
         await ref.read(familyControllerProvider.notifier).leaveFamily(familyId);
         if (context.mounted) Navigator.of(context).pop();
       } catch (e) {
-        if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+        if (context.mounted)
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(e.toString())));
       }
     }
   }
@@ -99,7 +151,14 @@ class FamilyDetailsScreen extends ConsumerWidget {
     return Text(title, style: Theme.of(context).textTheme.titleLarge);
   }
 
-  Widget _buildMembersList(BuildContext context, WidgetRef ref, String familyId, bool isAdmin, String? currentUserId, AppLocalizations localizations) {
+  Widget _buildMembersList(
+    BuildContext context,
+    WidgetRef ref,
+    String familyId,
+    bool isAdmin,
+    String? currentUserId,
+    AppLocalizations localizations,
+  ) {
     final membersStream = ref.watch(familyMembersStreamProvider(familyId));
     return membersStream.when(
       data: (members) => ListView.builder(
@@ -116,7 +175,14 @@ class FamilyDetailsScreen extends ConsumerWidget {
               trailing: isAdmin && member.userId != currentUserId
                   ? IconButton(
                       icon: const Icon(Icons.edit),
-                      onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ManageRolesScreen(familyId: familyId, memberUserId: member.userId))),
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => ManageRolesScreen(
+                            familyId: familyId,
+                            memberUserId: member.userId,
+                          ),
+                        ),
+                      ),
                     )
                   : null,
             ),
@@ -128,7 +194,11 @@ class FamilyDetailsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildPendingList(FamilyService familyService, List<String> pendingUids, AppLocalizations localizations) {
+  Widget _buildPendingList(
+    FamilyService familyService,
+    List<String> pendingUids,
+    AppLocalizations localizations,
+  ) {
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -151,7 +221,13 @@ class FamilyDetailsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildUnregisteredList(BuildContext context, WidgetRef ref, family_model.Family family, bool isAdmin, AppLocalizations localizations) {
+  Widget _buildUnregisteredList(
+    BuildContext context,
+    WidgetRef ref,
+    family_model.Family family,
+    bool isAdmin,
+    AppLocalizations localizations,
+  ) {
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -162,12 +238,19 @@ class FamilyDetailsScreen extends ConsumerWidget {
           child: ListTile(
             leading: Icon(member.isPet ? Icons.pets : Icons.person_outline),
             title: Text(member.name),
-            subtitle: Text(localizations.relationshipLabel(member.relationship)),
+            subtitle: Text(
+              localizations.relationshipLabel(member.relationship),
+            ),
             trailing: isAdmin
                 ? IconButton(
                     icon: const Icon(Icons.delete, color: Colors.red),
                     onPressed: () async {
-                      await ref.read(familyControllerProvider.notifier).removeUnregisteredMember(family.familyId, member.memberId);
+                      await ref
+                          .read(familyControllerProvider.notifier)
+                          .removeUnregisteredMember(
+                            family.familyId,
+                            member.memberId,
+                          );
                     },
                   )
                 : null,
@@ -179,10 +262,12 @@ class FamilyDetailsScreen extends ConsumerWidget {
 }
 
 // Helper providers to avoid re-watching the same stream
-final familyStreamProvider = StreamProvider.autoDispose.family<family_model.Family, String>((ref, familyId) {
-  return ref.watch(familyServiceProvider).getFamilyStream(familyId);
-});
+final familyStreamProvider = StreamProvider.autoDispose
+    .family<family_model.Family, String>((ref, familyId) {
+      return ref.watch(familyServiceProvider).getFamilyStream(familyId);
+    });
 
-final familyMembersStreamProvider = StreamProvider.autoDispose.family<List<FamilyMember>, String>((ref, familyId) {
-  return ref.watch(familyServiceProvider).getFamilyMembersStream(familyId);
-});
+final familyMembersStreamProvider = StreamProvider.autoDispose
+    .family<List<FamilyMember>, String>((ref, familyId) {
+      return ref.watch(familyServiceProvider).getFamilyMembersStream(familyId);
+    });
