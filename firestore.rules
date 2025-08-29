@@ -13,20 +13,40 @@ service cloud.firestore {
 
     match /families/{familyId} {
       function isAdmin() {
-        return isSignedIn() &&
-               resource.data.adminUserIds != null &&
-               request.auth.uid in resource.data.adminUserIds; // Reviso la sintaxis para que sea correcta
+        return isSignedIn() && request.auth.uid in resource.data.adminUserIds;
       }
 
       function isMember() {
-        return isSignedIn() &&
-               resource.data.memberUserIds != null &&
-               request.auth.uid in resource.data.memberUserIds;
+        return isSignedIn() && request.auth.uid in resource.data.memberUserIds;
+      }
+
+      function isPending() {
+        return isSignedIn() && request.auth.uid in resource.data.usersPending;
       }
       
-      allow read: if isMember() || isAdmin();
+      allow read: if isMember() || isAdmin() || isPending();
       allow update: if isAdmin();
       allow create: if isSignedIn();
+
+      // Rules for the 'members' subcollection
+      match /members/{memberId} {
+        function isFamilyAdmin() {
+          return request.auth.uid in get(/databases/$(database)/documents/families/$(familyId)).data.adminUserIds;
+        }
+
+        function isFamilyMember() {
+          return request.auth.uid in get(/databases/$(database)/documents/families/$(familyId)).data.memberUserIds;
+        }
+
+        // Any family member can read other members' data.
+        allow read: if isSignedIn() && isFamilyMember();
+
+        // Only admins can update a member's role.
+        allow update: if isSignedIn() && isFamilyAdmin();
+
+        // Creation and deletion are handled by server-side logic (Cloud Functions).
+        allow create, delete: if false;
+      }
     }
 
     match /invitations/{invitationId} {

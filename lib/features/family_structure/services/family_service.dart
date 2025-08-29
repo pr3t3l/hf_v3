@@ -5,7 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:flutter/foundation.dart';
-import 'package:cloud_functions/cloud_functions.dart'; // NEW: Import Cloud Functions
+import 'package:cloud_functions/cloud_functions.dart';
 
 // Common models
 import 'package:hf_v3/common/models/user_profile.dart';
@@ -25,8 +25,7 @@ class FamilyService {
   final FirebaseAuth _firebaseAuth;
   // ignore: unused_field
   final Uuid _uuid = const Uuid();
-  final FirebaseFunctions _functions =
-      FirebaseFunctions.instance; // NEW: Initialize Firebase Functions
+  final FirebaseFunctions _functions = FirebaseFunctions.instance;
 
   FamilyService(this._firestore, this._firebaseAuth);
 
@@ -36,16 +35,15 @@ class FamilyService {
   // --- Family Creation ---
   Future<family_model.Family> createFamily(String familyName) async {
     debugPrint('FamilyService: Iniciando createFamily para: $familyName');
-    if (currentUserId == null) {
+    final userId = currentUserId;
+    if (userId == null) {
       debugPrint('FamilyService: Error - Usuario no autenticado.');
       throw Exception("User not authenticated.");
     }
-    debugPrint('FamilyService: Usuario autenticado: $currentUserId');
+    debugPrint('FamilyService: Usuario autenticado: $userId');
 
-    final currentUserDoc = await _firestore
-        .collection('users')
-        .doc(currentUserId)
-        .get();
+    final currentUserDoc =
+        await _firestore.collection('users').doc(userId).get();
     if (!currentUserDoc.exists) {
       debugPrint(
         'FamilyService: Error - Perfil de usuario actual no encontrado.',
@@ -64,14 +62,8 @@ class FamilyService {
     final newFamily = family_model.Family(
       familyId: familyId,
       familyName: familyName,
-      adminUserIds: [currentUserId!],
-      memberUserIds: [
-        FamilyMember(
-          userId: currentUserId!,
-          role: 'parent',
-          displayName: currentUserProfile.displayName,
-        ),
-      ],
+      adminUserIds: [userId],
+      memberUserIds: [userId], // Now just a list of strings
       unregisteredMembers: [],
       usersPending: [],
       createdAt: Timestamp.now(),
@@ -83,10 +75,20 @@ class FamilyService {
 
     final batch = _firestore.batch();
 
+    // 1. Create the main family document
     batch.set(newFamilyRef, newFamily.toFirestore());
     debugPrint('FamilyService: Añadiendo creación de Family al batch.');
 
-    batch.update(_firestore.collection('users').doc(currentUserId), {
+    // 2. Create the member document in the subcollection
+    final memberRef = newFamilyRef.collection('members').doc(userId);
+    batch.set(memberRef, {
+      'role': 'administrator', // Creator is always an administrator
+      'displayName': currentUserProfile.displayName,
+    });
+    debugPrint('FamilyService: Añadiendo creación de Member en subcolección.');
+
+    // 3. Update the user's profile with the new family ID
+    batch.update(_firestore.collection('users').doc(userId), {
       'familyIds': FieldValue.arrayUnion([familyId]),
     });
     debugPrint(
@@ -126,10 +128,8 @@ class FamilyService {
         );
       }
       final String familyId = result.data['familyId'];
-      final familyDoc = await _firestore
-          .collection('families')
-          .doc(familyId)
-          .get();
+      final familyDoc =
+          await _firestore.collection('families').doc(familyId).get();
       return family_model.Family.fromFirestore(familyDoc);
     } on FirebaseFunctionsException catch (e) {
       debugPrint(
@@ -221,6 +221,48 @@ class FamilyService {
     });
   }
 
+  // --- NEW: Get Family Members Stream ---
+  Stream<List<FamilyMember>> getFamilyMembersStream(String familyId) {
+    return _firestore
+        .collection('families')
+        .doc(familyId)
+        .collection('members')
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        return FamilyMember(
+          userId: doc.id,
+          role: data['role'] ?? 'member',
+          displayName: data['displayName'] ?? 'Unknown Member',
+        );
+      }).toList();
+    });
+  }
+
+  // --- NEW: Get Single Family Member Stream ---
+  Stream<FamilyMember> getFamilyMemberStream(
+      String familyId, String memberId) {
+    return _firestore
+        .collection('families')
+        .doc(familyId)
+        .collection('members')
+        .doc(memberId)
+        .snapshots()
+        .map((doc) {
+      if (!doc.exists) {
+        throw Exception(
+            'Member not found in family $familyId with id $memberId');
+      }
+      final data = doc.data()!;
+      return FamilyMember(
+        userId: doc.id,
+        role: data['role'] ?? 'member',
+        displayName: data['displayName'] ?? 'Unknown Member',
+      );
+    });
+  }
+
   // --- Fetch User's Families ---
   Stream<List<family_model.Family>> getUserFamiliesStream() {
     debugPrint(
@@ -232,7 +274,11 @@ class FamilyService {
       );
       return Stream.value([]);
     }
-    return _firestore.collection('users').doc(currentUserId).snapshots().asyncMap((
+    return _firestore
+        .collection('users')
+        .doc(currentUserId)
+        .snapshots()
+        .asyncMap((
       userSnapshot,
     ) async {
       if (!userSnapshot.exists) {
@@ -254,10 +300,8 @@ class FamilyService {
         'FamilyService: Cargando ${userProfile.familyIds.length} familias del usuario.',
       );
       for (final familyId in userProfile.familyIds) {
-        final familyDoc = await _firestore
-            .collection('families')
-            .doc(familyId)
-            .get();
+        final familyDoc =
+            await _firestore.collection('families').doc(familyId).get();
         if (familyDoc.exists) {
           families.add(family_model.Family.fromFirestore(familyDoc));
         } else {
@@ -288,9 +332,8 @@ class FamilyService {
         .where('status', isEqualTo: 'pending')
         .snapshots()
         .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => Invitation.fromFirestore(doc))
-              .toList(),
+          (snapshot) =>
+              snapshot.docs.map((doc) => Invitation.fromFirestore(doc)).toList(),
         );
   }
 
@@ -315,10 +358,8 @@ class FamilyService {
       'FamilyService: Obteniendo nombre de familia para ID: $familyId',
     );
     try {
-      final familyDoc = await _firestore
-          .collection('families')
-          .doc(familyId)
-          .get();
+      final familyDoc =
+          await _firestore.collection('families').doc(familyId).get();
       if (familyDoc.exists) {
         final familyName = family_model.Family.fromFirestore(
           familyDoc,
@@ -363,7 +404,8 @@ class FamilyService {
     debugPrint(
       'FamilyService: Iniciando updateMemberRole para familyId: $familyId, memberUserId: $memberUserId, newRole: $newRole',
     );
-    if (currentUserId == null) {
+    final userId = currentUserId;
+    if (userId == null) {
       debugPrint('FamilyService: Error - Usuario no autenticado.');
       throw Exception("User not authenticated.");
     }
@@ -378,27 +420,15 @@ class FamilyService {
     debugPrint('FamilyService: Familia cargada: ${family.familyName}');
 
     // Only admins can update roles
-    if (!family.adminUserIds.contains(currentUserId)) {
+    if (!family.adminUserIds.contains(userId)) {
       throw Exception("Only family administrators can update member roles.");
     }
 
-    // Find and update the member's role
-    final updatedMembers = family.memberUserIds.map((member) {
-      if (member.userId == memberUserId) {
-        return FamilyMember(
-          userId: member.userId,
-          role: newRole,
-          displayName: member.displayName,
-        );
-      }
-      return member;
-    }).toList();
-    debugPrint('FamilyService: Miembros actualizados localmente.');
-
     try {
-      await familyRef.update({
-        'memberUserIds': updatedMembers.map((m) => m.toFirestore()).toList(),
-      });
+      await familyRef
+          .collection('members')
+          .doc(memberUserId)
+          .update({'role': newRole});
       debugPrint('FamilyService: Rol de miembro actualizado en Firestore.');
     } catch (e) {
       debugPrint('FamilyService: Error al actualizar rol de miembro: $e');
@@ -442,9 +472,8 @@ class FamilyService {
 
     try {
       await familyRef.update({
-        'unregisteredMembers': updatedUnregisteredMembers
-            .map((m) => m.toFirestore())
-            .toList(),
+        'unregisteredMembers':
+            updatedUnregisteredMembers.map((m) => m.toFirestore()).toList(),
       });
       debugPrint(
         'FamilyService: Miembro no registrado eliminado en Firestore.',
@@ -474,30 +503,31 @@ class FamilyService {
     final family = family_model.Family.fromFirestore(familyDoc);
     debugPrint('FamilyService: Familia cargada: ${family.familyName}');
 
-    if (!family.memberUserIds.any((m) => m.userId == userId)) {
-      debugPrint('FamilyService: Error - Usuario no es miembro de la familia.');
+    if (!family.memberUserIds.contains(userId)) {
+      debugPrint(
+          'FamilyService: Error - Usuario no es miembro de la familia.');
       throw Exception('User is not a member of this family.');
     }
 
-    final updatedMembers = family.memberUserIds
-        .where((m) => m.userId != userId)
-        .toList();
-    final updatedAdmins = family.adminUserIds
-        .where((id) => id != userId)
-        .toList();
-
     if (family.adminUserIds.contains(userId) &&
-        updatedAdmins.isEmpty &&
-        updatedMembers.isNotEmpty) {
+        family.adminUserIds.length == 1 &&
+        family.memberUserIds.length > 1) {
       debugPrint('FamilyService: Error - Último administrador no puede salir.');
       throw Exception('Cannot leave the family as the only administrator.');
     }
 
     final batch = _firestore.batch();
+
+    // 1. Remove user from members subcollection
+    batch.delete(familyRef.collection('members').doc(userId));
+
+    // 2. Remove user from memberUserIds and adminUserIds arrays
     batch.update(familyRef, {
-      'memberUserIds': updatedMembers.map((m) => m.toFirestore()).toList(),
-      'adminUserIds': updatedAdmins,
+      'memberUserIds': FieldValue.arrayRemove([userId]),
+      'adminUserIds': FieldValue.arrayRemove([userId]),
     });
+
+    // 3. Remove family from user's profile
     batch.update(_firestore.collection('users').doc(userId), {
       'familyIds': FieldValue.arrayRemove([familyId]),
     });

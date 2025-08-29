@@ -82,7 +82,7 @@ export const inviteFamilyMember = functions.https.onCall(
       const invitedUserId = invitedUserDoc.id;
 
       // Verificar si ya es miembro o tiene una invitación pendiente
-      if (familyData.memberUserIds.some((m: any) => m.userId === invitedUserId)) {
+      if (familyData.memberUserIds.includes(invitedUserId)) {
         throw new functions.https.HttpsError(
           "already-exists",
           "Este usuario ya es miembro de la familia."
@@ -115,10 +115,16 @@ export const inviteFamilyMember = functions.https.onCall(
       };
 
       batch.set(db.collection("invitations").doc(invitationId), newInvitation);
-      // Actualizar usersPending en el documento de la familia
-      batch.update(familyRef, {
+
+      // Actualizar la familia: añadir a usersPending y opcionalmente a adminUserIds
+      const familyUpdates: { [key: string]: any } = {
         usersPending: admin.firestore.FieldValue.arrayUnion(invitedUserId),
-      });
+      };
+      if (initialRole === "administrator") {
+        familyUpdates.adminUserIds = admin.firestore.FieldValue.arrayUnion(invitedUserId);
+      }
+      batch.update(familyRef, familyUpdates);
+
     } else {
       // Escenario 2: Añadir un miembro no registrado (por nombre)
       // No requiere una cuenta de usuario en la app.
@@ -214,13 +220,14 @@ export const joinFamily = functions.https.onCall(
     }
 
     const familyData = familyDoc.data() as {
-      memberUserIds: any[];
+      memberUserIds: string[];
       usersPending: string[];
+      adminUserIds: string[];
     };
     const userData = userDoc.data() as { displayName?: string };
 
     // 4. Validar que el usuario no sea ya un miembro
-    if (familyData?.memberUserIds?.some((m: any) => m.userId === userId)) {
+    if (familyData?.memberUserIds?.includes(userId)) {
       throw new functions.https.HttpsError(
         "already-exists",
         "Ya eres miembro de esta familia."
@@ -229,31 +236,31 @@ export const joinFamily = functions.https.onCall(
 
     const batch = db.batch();
 
-    // 5. Actualizar el documento de la familia:
-    //    - Mover al usuario de 'usersPending' a 'memberUserIds'.
-    //    - Importante: No usar arrayUnion para objetos complejos. Reconstruimos el array.
-    const newMember = {
-      userId,
+    // 5. Create member document in the subcollection
+    const memberRef = db.collection("families").doc(familyId).collection("members").doc(userId);
+    batch.set(memberRef, {
       role: invitationData.initialRole || "child",
       displayName: userData.displayName ?? "Usuario",
-    };
-
-    const updatedMemberUserIds = [...familyData.memberUserIds, newMember];
-    const updatedUsersPending = familyData.usersPending.filter(
-      (uid: string) => uid !== userId
-    );
-    
-    batch.update(familyDoc.ref, {
-      memberUserIds: updatedMemberUserIds,
-      usersPending: updatedUsersPending,
     });
 
-    // 6. Actualizar el documento del usuario: añadir el familyId
+    // 6. Update the main family document
+    const familyUpdates: { [key: string]: any } = {
+      memberUserIds: admin.firestore.FieldValue.arrayUnion(userId),
+      usersPending: admin.firestore.FieldValue.arrayRemove(userId),
+    };
+
+    if (invitationData.initialRole === "administrator") {
+      familyUpdates.adminUserIds = admin.firestore.FieldValue.arrayUnion(userId);
+    }
+    batch.update(familyDoc.ref, familyUpdates);
+
+
+    // 7. Actualizar el documento del usuario: añadir el familyId
     batch.update(userDoc.ref, {
       familyIds: admin.firestore.FieldValue.arrayUnion(familyId),
     });
 
-    // 7. Actualizar el estado de la invitación a "accepted"
+    // 8. Actualizar el estado de la invitación a "accepted"
     batch.update(invitationDoc.ref, {
       status: "accepted",
     });
