@@ -123,10 +123,9 @@ export const inviteFamilyMember = functions.https.onCall(
 
       // FIX: Si el rol inicial es 'administrator', añadir también a 'adminUserIds' al invitar.
       if (initialRole === "administrator") {
-          familyUpdateData.adminUserIds = admin.firestore.FieldValue.arrayUnion(invitedUserId);
+        familyUpdateData.adminUserIds = admin.firestore.FieldValue.arrayUnion(invitedUserId);
       }
       batch.update(familyRef, familyUpdateData);
-
     } else {
       // Escenario 2: Añadir un miembro no registrado (por nombre)
       // No requiere una cuenta de usuario en la app.
