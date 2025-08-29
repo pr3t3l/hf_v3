@@ -1,16 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hf_v3/l10n/app_localizations.dart';
 import 'package:hf_v3/features/family_structure/data/models/family_member.dart';
 import 'package:hf_v3/features/family_structure/presentation/controllers/family_controller.dart';
 import 'package:hf_v3/features/family_structure/services/family_service.dart';
-import 'package:hf_v3/l10n/app_localizations.dart';
-
-// Provider to fetch a single family member's details
-final familyMemberProvider = StreamProvider.autoDispose
-    .family<FamilyMember, ({String familyId, String memberId})>((ref, ids) {
-  final familyService = ref.watch(familyServiceProvider);
-  return familyService.getFamilyMemberStream(ids.familyId, ids.memberId);
-});
 
 class ManageRolesScreen extends ConsumerStatefulWidget {
   final String familyId;
@@ -28,6 +21,8 @@ class ManageRolesScreen extends ConsumerStatefulWidget {
 
 class _ManageRolesScreenState extends ConsumerState<ManageRolesScreen> {
   String? _selectedRole;
+  String? _initialRole; // To check if the role has changed
+
   final List<String> _availableRoles = [
     'parent',
     'child',
@@ -35,15 +30,14 @@ class _ManageRolesScreenState extends ConsumerState<ManageRolesScreen> {
     'administrator',
   ];
 
-  // No initState needed to set role, it will be set by the stream
-
   String _getRoleTranslation(String role, AppLocalizations localizations) {
     final translation = localizations.roleLabel(role);
     return translation.isNotEmpty ? translation : role;
   }
 
-  Future<void> _updateRole(String currentRole) async {
-    if (_selectedRole == null || _selectedRole == currentRole) {
+  Future<void> _updateRole() async {
+    if (_selectedRole == null || _selectedRole == _initialRole) {
+      // No change, just pop
       if (mounted) Navigator.of(context).pop();
       return;
     }
@@ -80,15 +74,32 @@ class _ManageRolesScreenState extends ConsumerState<ManageRolesScreen> {
   @override
   Widget build(BuildContext context) {
     final appLocalizations = AppLocalizations.of(context)!;
-    final memberAsyncValue = ref.watch(familyMemberProvider(
-        (familyId: widget.familyId, memberId: widget.memberUserId)));
+    final familyService = ref.watch(familyServiceProvider);
 
     return Scaffold(
       appBar: AppBar(title: Text(appLocalizations.manageRolesTitle)),
-      body: memberAsyncValue.when(
-        data: (member) {
-          // Initialize _selectedRole inside the build method if it's null
-          _selectedRole ??= member.role;
+      body: StreamBuilder<FamilyMember>(
+        stream: familyService.getMemberDocument(
+          widget.familyId,
+          widget.memberUserId,
+        ),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+          if (!snapshot.hasData) {
+            return Center(child: Text(appLocalizations.memberNotFound));
+          }
+
+          final member = snapshot.data!;
+          // Initialize roles only when data is first loaded
+          if (_initialRole == null) {
+            _initialRole = member.role;
+            _selectedRole = member.role;
+          }
 
           return Center(
             child: SingleChildScrollView(
@@ -131,7 +142,7 @@ class _ManageRolesScreenState extends ConsumerState<ManageRolesScreen> {
                   ref.watch(familyControllerProvider).isLoading
                       ? const CircularProgressIndicator()
                       : ElevatedButton(
-                          onPressed: () => _updateRole(member.role),
+                          onPressed: _updateRole,
                           child: Text(appLocalizations.updateRoleButton),
                         ),
                 ],
@@ -139,8 +150,6 @@ class _ManageRolesScreenState extends ConsumerState<ManageRolesScreen> {
             ),
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(child: Text('Error: $error')),
       ),
     );
   }

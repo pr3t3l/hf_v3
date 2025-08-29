@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hf_v3/features/family_structure/data/models/family_member.dart';
 import 'package:hf_v3/l10n/app_localizations.dart';
+import 'package:hf_v3/features/family_structure/data/models/family_member.dart';
 import 'package:hf_v3/features/family_structure/presentation/controllers/family_controller.dart';
 import 'package:hf_v3/features/family_structure/presentation/pages/invite_member_screen.dart';
 import 'package:hf_v3/features/family_structure/presentation/pages/manage_roles_screen.dart';
@@ -130,7 +131,7 @@ class FamilyDetailsScreen extends ConsumerWidget {
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 8),
-                // Registered Members List - Now using StreamBuilder
+                // Registered Members List (Refactored with StreamBuilder)
                 StreamBuilder<List<FamilyMember>>(
                   stream: familyService.getFamilyMembersStream(familyId),
                   builder: (context, memberSnapshot) {
@@ -141,9 +142,10 @@ class FamilyDetailsScreen extends ConsumerWidget {
                     if (memberSnapshot.hasError) {
                       return Center(
                         child: Text(
-                          'Error loading members: ${memberSnapshot.error}',
+                          'Error: ${memberSnapshot.error}',
                           style: TextStyle(
-                              color: Theme.of(context).colorScheme.error),
+                            color: Theme.of(context).colorScheme.error,
+                          ),
                         ),
                       );
                     }
@@ -155,6 +157,7 @@ class FamilyDetailsScreen extends ConsumerWidget {
                     }
 
                     final members = memberSnapshot.data!;
+
                     return ListView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
@@ -166,9 +169,7 @@ class FamilyDetailsScreen extends ConsumerWidget {
                           child: ListTile(
                             leading: const Icon(Icons.person),
                             title: Text(member.displayName),
-                            subtitle: Text(
-                              getRoleTranslation(member.role),
-                            ),
+                            subtitle: Text(getRoleTranslation(member.role)),
                             trailing: isAdmin && member.userId != currentUserId
                                 ? IconButton(
                                     icon: const Icon(Icons.edit),
@@ -179,6 +180,7 @@ class FamilyDetailsScreen extends ConsumerWidget {
                                               ManageRolesScreen(
                                             familyId: family.familyId,
                                             memberUserId: member.userId,
+                                            // The member object from the stream now has all the info
                                           ),
                                         ),
                                       );

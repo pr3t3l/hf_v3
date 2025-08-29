@@ -1,15 +1,20 @@
 // hf_v3/lib/features/family_structure/data/models/family.dart
 
+// hf_v3/lib/features/family_structure/data/models/family.dart
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:hf_v3/features/family_structure/data/models/family_member.dart'; // No longer needed
 import 'package:hf_v3/features/family_structure/data/models/unregistered_member.dart';
 
 class Family {
   final String familyId;
   final String familyName;
-  final List<String> adminUserIds;
-  final List<String> memberUserIds; // Now a list of user IDs (strings)
-  final List<UnregisteredMember> unregisteredMembers;
-  final List<String> usersPending;
+  final List<String> adminUserIds; // List of user UIDs who are admins
+  final List<String>
+      memberUserIds; // List of registered user UIDs in the family
+  final List<UnregisteredMember>
+      unregisteredMembers; // List of non-registered members
+  final List<String> usersPending; // UIDs of invited users pending acceptance
   final Timestamp createdAt;
   final bool isActive;
 
@@ -30,10 +35,14 @@ class Family {
       familyId: doc.id,
       familyName: data['familyName'] ?? '',
       adminUserIds: List<String>.from(data['adminUserIds'] ?? []),
-      memberUserIds: List<String>.from(data['memberUserIds'] ?? []),
+      memberUserIds: List<String>.from(
+        data['memberUserIds'] ?? [],
+      ), // Changed to List<String>
       unregisteredMembers: (data['unregisteredMembers'] as List<dynamic>?)
-          ?.map((m) => UnregisteredMember.fromMap(m as Map<String, dynamic>))
-          .toList() ??
+              ?.map(
+                (m) => UnregisteredMember.fromMap(m as Map<String, dynamic>),
+              )
+              .toList() ??
           [],
       usersPending: List<String>.from(data['usersPending'] ?? []),
       createdAt: data['createdAt'] ?? Timestamp.now(),
@@ -46,7 +55,7 @@ class Family {
       'familyId': familyId,
       'familyName': familyName,
       'adminUserIds': adminUserIds,
-      'memberUserIds': memberUserIds,
+      'memberUserIds': memberUserIds, // Changed to store as List<String>
       'unregisteredMembers':
           unregisteredMembers.map((m) => m.toFirestore()).toList(),
       'usersPending': usersPending,

@@ -1,56 +1,70 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Helper function to check if a user is signed in.
     function isSignedIn() {
       return request.auth != null;
     }
 
+    // Helper function to check if a user is an admin of a specific family.
+    // This requires reading the family document.
+    function isFamilyAdmin(familyId) {
+      let familyData = get(/databases/$(database)/documents/families/$(familyId)).data;
+      return isSignedIn() &&
+             request.auth.uid in familyData.adminUserIds;
+    }
+
+    // Rules for the 'users' collection.
     match /users/{userId} {
+      // Users can create their own profile, and can only read/update/delete their own.
       allow create: if isSignedIn() && request.auth.uid == userId;
       allow read, update, delete: if isSignedIn() && request.auth.uid == userId;
     }
 
+    // Rules for the 'families' collection.
     match /families/{familyId} {
-      function isAdmin() {
-        return isSignedIn() && request.auth.uid in resource.data.adminUserIds;
-      }
-
+      // A user is a member if their UID is in the memberUserIds list.
+      // This rule now works correctly because memberUserIds is a List<String>.
       function isMember() {
-        return isSignedIn() && request.auth.uid in resource.data.memberUserIds;
+        return isSignedIn() &&
+               request.auth.uid in resource.data.memberUserIds;
       }
 
-      function isPending() {
-        return isSignedIn() && request.auth.uid in resource.data.usersPending;
+      // An admin is defined in the document's adminUserIds list.
+      function isAdmin() {
+        return isSignedIn() &&
+               request.auth.uid in resource.data.adminUserIds;
       }
       
-      allow read: if isMember() || isAdmin() || isPending();
+      // Members and admins can read the family document.
+      allow read: if isMember() || isAdmin();
+      // Only admins can update the family document.
       allow update: if isAdmin();
+      // Any signed-in user can create a new family.
       allow create: if isSignedIn();
-
-      // Rules for the 'members' subcollection
-      match /members/{memberId} {
-        function isFamilyAdmin() {
-          return request.auth.uid in get(/databases/$(database)/documents/families/$(familyId)).data.adminUserIds;
-        }
-
-        function isFamilyMember() {
-          return request.auth.uid in get(/databases/$(database)/documents/families/$(familyId)).data.memberUserIds;
-        }
-
-        // Any family member can read other members' data.
-        allow read: if isSignedIn() && isFamilyMember();
-
-        // Only admins can update a member's role.
-        allow update: if isSignedIn() && isFamilyAdmin();
-
-        // Creation and deletion are handled by server-side logic (Cloud Functions).
-        allow create, delete: if false;
-      }
     }
 
+    // NEW: Rules for the 'members' subcollection within each family.
+    match /families/{familyId}/members/{memberUserId} {
+      // An admin can read any member document.
+      // A user can read their own member document.
+      allow read: if isFamilyAdmin(familyId) || (isSignedIn() && request.auth.uid == memberUserId);
+
+      // An admin can update or delete any member document.
+      allow update, delete: if isFamilyAdmin(familyId);
+
+      // An admin can create a member document.
+      // A user can create their OWN member document (e.g., when joining a family).
+      allow create: if isFamilyAdmin(familyId) || (isSignedIn() && request.auth.uid == memberUserId);
+    }
+
+    // Rules for the 'invitations' collection.
     match /invitations/{invitationId} {
+      // Any signed-in user can create an invitation (via cloud function).
       allow create: if isSignedIn();
+      // Only the invited user can read or update their own invitation.
       allow read, update: if isSignedIn() && request.auth.uid == resource.data.invitedUserId;
     }
   }
