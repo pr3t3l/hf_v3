@@ -1,63 +1,47 @@
 // hf_v3/lib/features/family_structure/presentation/pages/family_tree_screen.dart
 
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // Importar ConsumerWidget
 import 'package:hf_v3/features/family_structure/data/models/family.dart'
     as family_model;
-import 'package:hf_v3/features/family_structure/data/models/family_member.dart';
-import 'package:hf_v3/features/family_structure/services/family_service.dart';
 import 'package:hf_v3/l10n/app_localizations.dart';
+// Necesario para Firestore
+import 'package:hf_v3/features/family_structure/services/family_service.dart'; // Importar FamilyService
 
 class FamilyTreeScreen extends ConsumerWidget {
+  // Cambiado a ConsumerWidget
   final family_model.Family family;
   const FamilyTreeScreen({super.key, required this.family});
 
   String _translateRelationship(BuildContext context, String type) {
     final appLocalizations = AppLocalizations.of(context)!;
-    final translation = appLocalizations.relationshipLabel(type);
-    return translation.isNotEmpty ? translation : type;
+    return appLocalizations.relationshipLabel(type);
   }
 
   Widget _buildNode(String text) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: Colors.grey.shade400),
         borderRadius: BorderRadius.circular(8),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withAlpha((255 * 0.1).toInt()),
-            spreadRadius: 1,
-            blurRadius: 3,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
-      child: Text(text, style: const TextStyle(fontWeight: FontWeight.bold)),
+      child: Text(text),
     );
   }
 
-  Widget _buildSection(
-      BuildContext context, String title, List<Widget> children) {
-    if (children.isEmpty) return const SizedBox.shrink();
+  Widget _buildSection(BuildContext context, String title, List<String> names) {
+    if (names.isEmpty) return const SizedBox.shrink();
     return Padding(
-      padding: const EdgeInsets.only(left: 16.0, top: 20.0),
+      padding: const EdgeInsets.only(left: 16.0, top: 16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: Theme.of(context)
-                .textTheme
-                .titleLarge
-                ?.copyWith(color: Theme.of(context).colorScheme.primary),
-          ),
-          const SizedBox(height: 12),
+          Text(title, style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
           Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: children,
+            spacing: 8,
+            runSpacing: 8,
+            children: names.map(_buildNode).toList(),
           ),
         ],
       ),
@@ -66,48 +50,53 @@ class FamilyTreeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Añadir WidgetRef ref
     final appLocalizations = AppLocalizations.of(context)!;
-    final familyService = ref.watch(familyServiceProvider);
-    final unregistered = family.unregisteredMembers
-        .map((m) =>
-            '${m.name} (${_translateRelationship(context, m.relationship)})')
-        .toList();
+    final familyService = ref.watch(
+      familyServiceProvider,
+    ); // Obtener FamilyService
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(appLocalizations.viewFamilyTreeButton),
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-      ),
-      body: StreamBuilder<List<FamilyMember>>(
+      appBar: AppBar(title: Text(appLocalizations.viewFamilyTreeButton)),
+      body: StreamBuilder<List<Map<String, dynamic>>>(
+        // Lee de la subcolección 'members'
         stream: familyService.getFamilyMembersStream(family.familyId),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+        builder: (context, memberSnapshot) {
+          if (memberSnapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+          if (memberSnapshot.hasError) {
+            return Text(
+              'Error loading members for tree: ${memberSnapshot.error}',
+            );
           }
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text("No registered members found"));
+          if (!memberSnapshot.hasData || memberSnapshot.data!.isEmpty) {
+            return const Text('No registered members for family tree.');
           }
 
-          final members = snapshot.data!;
-          final parents = members
-              .where((m) => m.role == 'parent')
-              .map((m) => _buildNode(m.displayName))
+          final registeredMembersData = memberSnapshot.data!;
+
+          final parents = registeredMembersData
+              .where((m) => m['role'] == 'parent')
+              .map((m) => m['displayName'] as String)
               .toList();
-          final children = members
-              .where((m) => m.role == 'child')
-              .map((m) => _buildNode(m.displayName))
+          final children = registeredMembersData
+              .where((m) => m['role'] == 'child')
+              .map((m) => m['displayName'] as String)
               .toList();
-          final guardians = members
-              .where((m) => m.role == 'guardian')
-              .map((m) => _buildNode(m.displayName))
+          final guardians = registeredMembersData
+              .where((m) => m['role'] == 'guardian')
+              .map((m) => m['displayName'] as String)
               .toList();
-          final administrators = members
-              .where((m) => m.role == 'administrator')
-              .map((m) => _buildNode(m.displayName))
+          final administrators = registeredMembersData
+              .where((m) => m['role'] == 'administrator')
+              .map((m) => m['displayName'] as String)
+              .toList();
+          final unregistered = family.unregisteredMembers
+              .map(
+                (m) =>
+                    '${m.name} (${_translateRelationship(context, m.relationship)})',
+              )
               .toList();
 
           return SingleChildScrollView(
@@ -117,19 +106,29 @@ class FamilyTreeScreen extends ConsumerWidget {
               children: [
                 _buildNode(family.familyName),
                 _buildSection(
-                    context, appLocalizations.roleLabel('parent'), parents),
+                  context,
+                  appLocalizations.roleLabel('parent'),
+                  parents,
+                ),
                 _buildSection(
-                    context, appLocalizations.roleLabel('child'), children),
-                _buildSection(context, appLocalizations.roleLabel('guardian'),
-                    guardians),
+                  context,
+                  appLocalizations.roleLabel('child'),
+                  children,
+                ),
                 _buildSection(
-                    context,
-                    appLocalizations.roleLabel('administrator'),
-                    administrators),
+                  context,
+                  appLocalizations.roleLabel('guardian'),
+                  guardians,
+                ),
+                _buildSection(
+                  context,
+                  appLocalizations.roleLabel('administrator'),
+                  administrators,
+                ),
                 _buildSection(
                   context,
                   appLocalizations.unregisteredMembersTitle,
-                  unregistered.map(_buildNode).toList(),
+                  unregistered,
                 ),
               ],
             ),

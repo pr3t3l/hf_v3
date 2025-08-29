@@ -3,18 +3,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hf_v3/l10n/app_localizations.dart';
-import 'package:hf_v3/features/family_structure/data/models/family_member.dart';
 import 'package:hf_v3/features/family_structure/presentation/controllers/family_controller.dart';
-import 'package:hf_v3/features/family_structure/services/family_service.dart';
+import 'package:hf_v3/features/family_structure/services/family_service.dart'; // Importar FamilyService
 
 class ManageRolesScreen extends ConsumerStatefulWidget {
   final String familyId;
-  final String memberUserId;
+  final String memberUserId; // The user whose role is being managed
+  // final String currentRole; // Ya no es necesario pasar currentRole directamente
+  // final String memberDisplayName; // Ya no es necesario pasar memberDisplayName directamente
 
   const ManageRolesScreen({
     super.key,
     required this.familyId,
     required this.memberUserId,
+    // required this.currentRole,
+    // required this.memberDisplayName,
   });
 
   @override
@@ -23,8 +26,10 @@ class ManageRolesScreen extends ConsumerStatefulWidget {
 
 class _ManageRolesScreenState extends ConsumerState<ManageRolesScreen> {
   String? _selectedRole;
-  String? _initialRole; // To check if the role has changed
-
+  String? _currentRoleFromFetch; // Para almacenar el rol actual del miembro
+  String?
+  _memberDisplayNameFromFetch; // Para almacenar el displayName del miembro
+  bool _isLoadingMemberDetails = true; // Para controlar el estado de carga
   final List<String> _availableRoles = [
     'parent',
     'child',
@@ -32,15 +37,74 @@ class _ManageRolesScreenState extends ConsumerState<ManageRolesScreen> {
     'administrator',
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    _fetchMemberDetails();
+  }
+
+  Future<void> _fetchMemberDetails() async {
+    setState(() {
+      _isLoadingMemberDetails = true;
+    });
+    try {
+      final familyService = ref.read(familyServiceProvider);
+      final memberDetails = await familyService.getMemberDocument(
+        widget.familyId,
+        widget.memberUserId,
+      );
+      if (memberDetails != null) {
+        setState(() {
+          _currentRoleFromFetch = memberDetails['role'] as String;
+          _selectedRole = _currentRoleFromFetch;
+          _memberDisplayNameFromFetch = memberDetails['displayName'] as String;
+        });
+      } else {
+        // Manejar caso donde el miembro no se encuentra
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                AppLocalizations.of(
+                  context,
+                )!.errorLoadingFamilyDetails('Member not found.'),
+              ),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+          Navigator.of(context).pop();
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(
+                context,
+              )!.errorLoadingFamilyDetails(e.toString()),
+            ),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+        Navigator.of(context).pop();
+      }
+    } finally {
+      setState(() {
+        _isLoadingMemberDetails = false;
+      });
+    }
+  }
+
   String _getRoleTranslation(String role, AppLocalizations localizations) {
-    final translation = localizations.roleLabel(role);
-    return translation.isNotEmpty ? translation : role;
+    return localizations.roleLabel(role);
   }
 
   Future<void> _updateRole() async {
-    if (_selectedRole == null || _selectedRole == _initialRole) {
-      // No change, just pop
-      if (mounted) Navigator.of(context).pop();
+    if (_selectedRole == null || _selectedRole == _currentRoleFromFetch) {
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
       return;
     }
 
@@ -56,6 +120,11 @@ class _ManageRolesScreenState extends ConsumerState<ManageRolesScreen> {
           SnackBar(
             content: Text(AppLocalizations.of(context)!.roleUpdatedSuccess),
             backgroundColor: Theme.of(context).colorScheme.primary,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            margin: const EdgeInsets.all(16),
           ),
         );
         Navigator.of(context).pop();
@@ -66,8 +135,12 @@ class _ManageRolesScreenState extends ConsumerState<ManageRolesScreen> {
         SnackBar(
           content: Text(
             AppLocalizations.of(context)!.roleUpdatedError(e.toString()),
+            style: TextStyle(color: Theme.of(context).colorScheme.onError),
           ),
           backgroundColor: Theme.of(context).colorScheme.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          margin: const EdgeInsets.all(16),
         ),
       );
     }
@@ -75,83 +148,84 @@ class _ManageRolesScreenState extends ConsumerState<ManageRolesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final familyState = ref.watch(familyControllerProvider);
     final appLocalizations = AppLocalizations.of(context)!;
-    final familyService = ref.watch(familyServiceProvider);
+
+    if (_isLoadingMemberDetails) {
+      return Scaffold(
+        appBar: AppBar(title: Text(appLocalizations.manageRolesTitle)),
+        body: Center(
+          child: CircularProgressIndicator(
+            color: Theme.of(context).colorScheme.primary,
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(title: Text(appLocalizations.manageRolesTitle)),
-      body: StreamBuilder<FamilyMember>(
-        stream: familyService.getMemberDocument(
-          widget.familyId,
-          widget.memberUserId,
-        ),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          }
-          if (!snapshot.hasData) {
-            return const Center(child: Text("Member not found"));
-          }
-
-          final member = snapshot.data!;
-          // Initialize roles only when data is first loaded
-          if (_initialRole == null) {
-            _initialRole = member.role;
-            _selectedRole = member.role;
-          }
-
-          return Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    appLocalizations.manageRoleFor(member.displayName),
-                    style: Theme.of(context).textTheme.titleLarge,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16.0),
-                  Text(
-                    appLocalizations.currentRoleLabel(
-                      _getRoleTranslation(member.role, appLocalizations),
-                    ),
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 24.0),
-                  DropdownButtonFormField<String>(
-                    value: _selectedRole,
-                    decoration: InputDecoration(
-                      labelText: appLocalizations.newRoleLabel,
-                    ),
-                    hint: Text(appLocalizations.selectNewRoleHint),
-                    items: _availableRoles.map((String role) {
-                      return DropdownMenuItem<String>(
-                        value: role,
-                        child: Text(_getRoleTranslation(role, appLocalizations)),
-                      );
-                    }).toList(),
-                    onChanged: (String? newValue) {
-                      setState(() {
-                        _selectedRole = newValue;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 24.0),
-                  ref.watch(familyControllerProvider).isLoading
-                      ? const CircularProgressIndicator()
-                      : ElevatedButton(
-                          onPressed: _updateRole,
-                          child: Text(appLocalizations.updateRoleButton),
-                        ),
-                ],
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                appLocalizations.manageRoleFor(
+                  _memberDisplayNameFromFetch ??
+                      'Cargando...', // Usar el nombre obtenido
+                ),
+                style: Theme.of(context).textTheme.titleLarge,
+                textAlign: TextAlign.center,
               ),
-            ),
-          );
-        },
+              const SizedBox(height: 16.0),
+              Text(
+                appLocalizations.currentRoleLabel(
+                  _getRoleTranslation(
+                    _currentRoleFromFetch ?? 'Cargando...',
+                    appLocalizations,
+                  ),
+                ),
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 24.0),
+              DropdownButtonFormField<String>(
+                value: _selectedRole,
+                decoration: InputDecoration(
+                  labelText: appLocalizations.newRoleLabel,
+                ),
+                hint: Text(appLocalizations.selectNewRoleHint),
+                items: _availableRoles.map((String role) {
+                  return DropdownMenuItem<String>(
+                    value: role,
+                    child: Text(_getRoleTranslation(role, appLocalizations)),
+                  );
+                }).toList(),
+                onChanged: (String? newValue) {
+                  setState(() {
+                    _selectedRole = newValue;
+                  });
+                },
+                validator: (value) {
+                  if (value == null) {
+                    return appLocalizations.newRoleRequired;
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 24.0),
+              familyState.isLoading
+                  ? CircularProgressIndicator(
+                      color: Theme.of(context).colorScheme.primary,
+                    )
+                  : ElevatedButton(
+                      onPressed: _updateRole,
+                      style: Theme.of(context).elevatedButtonTheme.style,
+                      child: Text(appLocalizations.updateRoleButton),
+                    ),
+            ],
+          ),
+        ),
       ),
     );
   }

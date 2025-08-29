@@ -1,19 +1,16 @@
-// hf_v3/lib/features/family_structure/services/family_service.dart
+// lib/features/family_structure/services/family_service.dart
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:uuid/uuid.dart';
+// import 'package:uuid/uuid.dart'; // Eliminado: ya no se usa directamente aquí
 import 'package:flutter/foundation.dart';
-import 'package:cloud_functions/cloud_functions.dart'; // NEW: Import Cloud Functions
+import 'package:cloud_functions/cloud_functions.dart';
 
-// Common models
 import 'package:hf_v3/common/models/user_profile.dart';
 
-// Family Structure specific models
 import 'package:hf_v3/features/family_structure/data/models/family.dart'
     as family_model;
-import 'package:hf_v3/features/family_structure/data/models/family_member.dart';
 import 'package:hf_v3/features/family_structure/data/models/invitation.dart';
 
 final familyServiceProvider = Provider<FamilyService>(
@@ -23,28 +20,26 @@ final familyServiceProvider = Provider<FamilyService>(
 class FamilyService {
   final FirebaseFirestore _firestore;
   final FirebaseAuth _firebaseAuth;
-  // ignore: unused_field
-  final Uuid _uuid = const Uuid();
-  final FirebaseFunctions _functions =
-      FirebaseFunctions.instance; // NEW: Initialize Firebase Functions
+  // final Uuid _uuid = const Uuid(); // Eliminado: ya no se usa directamente aquí
+  final FirebaseFunctions _functions = FirebaseFunctions.instance;
 
   FamilyService(this._firestore, this._firebaseAuth);
 
-  // Helper to get current user ID
   String? get currentUserId => _firebaseAuth.currentUser?.uid;
 
-  // --- Family Creation (Refactored) ---
+  // --- Family Creation ---
   Future<family_model.Family> createFamily(String familyName) async {
     debugPrint('FamilyService: Iniciando createFamily para: $familyName');
-    final userId = currentUserId;
-    if (userId == null) {
+    if (currentUserId == null) {
       debugPrint('FamilyService: Error - Usuario no autenticado.');
       throw Exception("User not authenticated.");
     }
-    debugPrint('FamilyService: Usuario autenticado: $userId');
+    debugPrint('FamilyService: Usuario autenticado: $currentUserId');
 
-    final currentUserDoc =
-        await _firestore.collection('users').doc(userId).get();
+    final currentUserDoc = await _firestore
+        .collection('users')
+        .doc(currentUserId)
+        .get();
     if (!currentUserDoc.exists) {
       debugPrint(
         'FamilyService: Error - Perfil de usuario actual no encontrado.',
@@ -60,12 +55,11 @@ class FamilyService {
     final familyId = newFamilyRef.id;
     debugPrint('FamilyService: Generando nuevo Family ID: $familyId');
 
-    // La nueva familia ahora tiene un array de strings para memberUserIds
     final newFamily = family_model.Family(
       familyId: familyId,
       familyName: familyName,
-      adminUserIds: [userId],
-      memberUserIds: [userId], // Solo el UID del creador
+      adminUserIds: [currentUserId!],
+      memberUserIds: [currentUserId!], // ¡CAMBIADO! Solo el UID
       unregisteredMembers: [],
       usersPending: [],
       createdAt: Timestamp.now(),
@@ -77,21 +71,20 @@ class FamilyService {
 
     final batch = _firestore.batch();
 
-    // 1. Crear el documento principal de la familia
     batch.set(newFamilyRef, newFamily.toFirestore());
     debugPrint('FamilyService: Añadiendo creación de Family al batch.');
 
-    // 2. Crear el documento del miembro en la subcolección /members
-    final memberRef = newFamilyRef.collection('members').doc(userId);
-    batch.set(memberRef, {
-      'role': 'administrator', // El creador es administrador
+    // ¡NUEVO! Crear documento en la subcolección 'members' para el creador
+    batch.set(newFamilyRef.collection('members').doc(currentUserId!), {
+      'role':
+          'administrator', // ¡CAMBIADO! Rol por defecto del creador es administrador
       'displayName': currentUserProfile.displayName,
-      'joinedAt': FieldValue.serverTimestamp(),
     });
-    debugPrint('FamilyService: Añadiendo creación de Member en subcolección.');
+    debugPrint(
+      'FamilyService: Añadiendo creación de member document en subcolección al batch.',
+    );
 
-    // 3. Actualizar el perfil del usuario para añadir el familyId
-    batch.update(_firestore.collection('users').doc(userId), {
+    batch.update(_firestore.collection('users').doc(currentUserId), {
       'familyIds': FieldValue.arrayUnion([familyId]),
     });
     debugPrint(
@@ -341,16 +334,14 @@ class FamilyService {
     }
   }
 
-  // --- Get User Display Name by UID (Refactored) ---
-  Future<String> getUserDisplayName(
-    String userId, {
-    String? familyId,
-  }) async {
+  // --- NEW: Get User Display Name by UID ---
+  // Este método ahora puede recibir un familyId para buscar en la subcolección de miembros
+  Future<String> getUserDisplayName(String userId, {String? familyId}) async {
     debugPrint(
-      'FamilyService: Obteniendo displayName para UID: $userId with familyId: $familyId',
+      'FamilyService: Obteniendo displayName para UID: $userId, en familia: $familyId',
     );
     try {
-      // If familyId is provided, first try to get the name from the members subcollection.
+      // Si se proporciona un familyId, intentar leer de la subcolección 'members'
       if (familyId != null) {
         final memberDoc = await _firestore
             .collection('families')
@@ -358,11 +349,11 @@ class FamilyService {
             .collection('members')
             .doc(userId)
             .get();
-        if (memberDoc.exists && memberDoc.data()!.containsKey('displayName')) {
-          return memberDoc.data()!['displayName'];
+        if (memberDoc.exists) {
+          return memberDoc.data()?['displayName'] ?? 'Usuario Desconocido';
         }
       }
-      // Fallback to the global users collection.
+      // Si no se proporciona familyId o no se encuentra en la subcolección, intentar del perfil de usuario principal
       final userDoc = await _firestore.collection('users').doc(userId).get();
       if (userDoc.exists) {
         return UserProfile.fromFirestore(userDoc).displayName;
@@ -377,36 +368,49 @@ class FamilyService {
     }
   }
 
-  // --- NEW: Get a specific member's document from the subcollection ---
-  Stream<FamilyMember> getMemberDocument(String familyId, String memberId) {
-    return _firestore
-        .collection('families')
-        .doc(familyId)
-        .collection('members')
-        .doc(memberId)
-        .snapshots()
-        .map((doc) {
-      if (!doc.exists) {
-        throw Exception('Member document not found.');
-      }
-      return FamilyMember.fromFirestore(doc);
-    });
-  }
-
-  // --- NEW: Get all members from the subcollection ---
-  Stream<List<FamilyMember>> getFamilyMembersStream(String familyId) {
+  // --- NEW: Stream de miembros de una familia (para FamilyDetailsScreen y FamilyTreeScreen) ---
+  Stream<List<Map<String, dynamic>>> getFamilyMembersStream(String familyId) {
+    debugPrint(
+      'FamilyService: Obteniendo stream de miembros para familyId: $familyId',
+    );
     return _firestore
         .collection('families')
         .doc(familyId)
         .collection('members')
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => FamilyMember.fromFirestore(doc))
-            .toList());
+        .map((snapshot) {
+          return snapshot.docs.map((doc) {
+            final data = doc.data();
+            return {
+              'userId': doc.id,
+              'displayName': data['displayName'] as String,
+              'role': data['role'] as String,
+            };
+          }).toList();
+        });
   }
 
+  // --- NEW: Obtener un documento de miembro específico (para ManageRolesScreen) ---
+  Future<Map<String, dynamic>?> getMemberDocument(
+    String familyId,
+    String memberUserId,
+  ) async {
+    debugPrint(
+      'FamilyService: Obteniendo documento de miembro para familyId: $familyId, memberUserId: $memberUserId',
+    );
+    final memberDoc = await _firestore
+        .collection('families')
+        .doc(familyId)
+        .collection('members')
+        .doc(memberUserId)
+        .get();
+    if (memberDoc.exists) {
+      return {'userId': memberDoc.id, ...memberDoc.data()!};
+    }
+    return null;
+  }
 
-  // --- Assign/Modify Member Role (Refactored) ---
+  // --- Assign/Modify Member Role ---
   Future<void> updateMemberRole(
     String familyId,
     String memberUserId,
@@ -415,8 +419,7 @@ class FamilyService {
     debugPrint(
       'FamilyService: Iniciando updateMemberRole para familyId: $familyId, memberUserId: $memberUserId, newRole: $newRole',
     );
-    final userId = currentUserId;
-    if (userId == null) {
+    if (currentUserId == null) {
       debugPrint('FamilyService: Error - Usuario no autenticado.');
       throw Exception("User not authenticated.");
     }
@@ -430,24 +433,34 @@ class FamilyService {
     final family = family_model.Family.fromFirestore(familyDoc);
     debugPrint('FamilyService: Familia cargada: ${family.familyName}');
 
-    // Only admins can update roles.
-    if (!family.adminUserIds.contains(userId)) {
+    // Only admins can update roles
+    if (!family.adminUserIds.contains(currentUserId)) {
+      debugPrint('FamilyService: Error - Usuario no es administrador.');
       throw Exception("Only family administrators can update member roles.");
     }
 
-    // Directly update the document in the 'members' subcollection.
-    final memberRef = familyRef.collection('members').doc(memberUserId);
+    // Actualizar el documento en la subcolección 'members'
+    final memberDocRef = familyRef.collection('members').doc(memberUserId);
+    await memberDocRef.update({'role': newRole});
+    debugPrint(
+      'FamilyService: Rol de miembro actualizado en Firestore (subcolección).',
+    );
 
-    try {
-      await memberRef.update({'role': newRole});
-      debugPrint(
-        'FamilyService: Rol de miembro actualizado directamente en la subcolección.',
-      );
-    } catch (e) {
-      debugPrint(
-        'FamilyService: Error al actualizar rol de miembro en subcolección: $e',
-      );
-      rethrow;
+    // Si el nuevo rol es 'administrator', añadirlo a adminUserIds
+    if (newRole == 'administrator' &&
+        !family.adminUserIds.contains(memberUserId)) {
+      await familyRef.update({
+        'adminUserIds': FieldValue.arrayUnion([memberUserId]),
+      });
+      debugPrint('FamilyService: Usuario añadido a adminUserIds.');
+    }
+    // Si el nuevo rol NO es 'administrator', removerlo de adminUserIds
+    else if (newRole != 'administrator' &&
+        family.adminUserIds.contains(memberUserId)) {
+      await familyRef.update({
+        'adminUserIds': FieldValue.arrayRemove([memberUserId]),
+      });
+      debugPrint('FamilyService: Usuario removido de adminUserIds.');
     }
   }
 
@@ -475,6 +488,7 @@ class FamilyService {
 
     // Only admins can remove unregistered members
     if (!family.adminUserIds.contains(currentUserId)) {
+      debugPrint('FamilyService: Error - Usuario no es administrador.');
       throw Exception("Only family administrators can remove members.");
     }
 
@@ -485,14 +499,30 @@ class FamilyService {
       'FamilyService: Miembros no registrados actualizados localmente.',
     );
 
+    final batch = _firestore.batch();
+    batch.update(familyRef, {
+      'unregisteredMembers': updatedUnregisteredMembers
+          .map((m) => m.toFirestore())
+          .toList(),
+    });
+
+    // Eliminar también la relación si existe
+    final relationshipsQuery = await _firestore
+        .collection('familyRelationships')
+        .where('familyId', isEqualTo: familyId)
+        .where('member2Ref.id', isEqualTo: memberIdToRemove)
+        .get();
+    for (final doc in relationshipsQuery.docs) {
+      batch.delete(doc.reference);
+    }
+    debugPrint(
+      'FamilyService: Relaciones asociadas al miembro no registrado añadidas al batch para eliminación.',
+    );
+
     try {
-      await familyRef.update({
-        'unregisteredMembers': updatedUnregisteredMembers
-            .map((m) => m.toFirestore())
-            .toList(),
-      });
+      await batch.commit();
       debugPrint(
-        'FamilyService: Miembro no registrado eliminado en Firestore.',
+        'FamilyService: Miembro no registrado eliminado y relaciones actualizadas en Firestore.',
       );
     } catch (e) {
       debugPrint('FamilyService: Error al eliminar miembro no registrado: $e');
@@ -500,7 +530,7 @@ class FamilyService {
     }
   }
 
-  // --- Leave Family (Refactored with Transaction) ---
+  // --- Leave Family ---
   Future<void> leaveFamily(String familyId) async {
     debugPrint('FamilyService: Iniciando leaveFamily para familyId: $familyId');
     final userId = currentUserId;
@@ -510,46 +540,58 @@ class FamilyService {
     }
 
     final familyRef = _firestore.collection('families').doc(familyId);
-    final userRef = _firestore.collection('users').doc(userId);
+    final familyDoc = await familyRef.get();
+    if (!familyDoc.exists) {
+      debugPrint('FamilyService: Error - Familia no encontrada.');
+      throw Exception('Family not found.');
+    }
+
+    final family = family_model.Family.fromFirestore(familyDoc);
+    debugPrint('FamilyService: Familia cargada: ${family.familyName}');
+
+    if (!family.memberUserIds.contains(userId)) {
+      debugPrint('FamilyService: Error - Usuario no es miembro de la familia.');
+      throw Exception('User is not a member of this family.');
+    }
+
+    final updatedMembers = family.memberUserIds
+        .where((id) => id != userId)
+        .toList();
+    final updatedAdmins = family.adminUserIds
+        .where((id) => id != userId)
+        .toList();
+
+    // Lógica para el último administrador
+    // Si el usuario que se va es un administrador Y es el último administrador,
+    // y todavía hay otros miembros registrados, se debe impedir que se vaya.
+    if (family.adminUserIds.contains(userId) &&
+        updatedAdmins.isEmpty &&
+        updatedMembers.isNotEmpty) {
+      debugPrint(
+        'FamilyService: Error - El último administrador no puede salir si hay otros miembros.',
+      );
+      throw Exception(
+        'Cannot leave the family as the only administrator if there are other members.',
+      );
+    }
+
+    final batch = _firestore.batch();
+    batch.update(familyRef, {
+      'memberUserIds': updatedMembers,
+      'adminUserIds': updatedAdmins,
+    });
+    batch.update(_firestore.collection('users').doc(userId), {
+      'familyIds': FieldValue.arrayRemove([familyId]),
+    });
+    // Eliminar el documento del miembro de la subcolección 'members'
+    batch.delete(familyRef.collection('members').doc(userId));
+    debugPrint(
+      'FamilyService: Eliminando documento de miembro de la subcolección.',
+    );
 
     try {
-      await _firestore.runTransaction((transaction) async {
-        final familyDoc = await transaction.get(familyRef);
-        if (!familyDoc.exists) {
-          throw Exception('Family not found.');
-        }
-
-        final family = family_model.Family.fromFirestore(familyDoc);
-
-        if (!family.memberUserIds.contains(userId)) {
-          throw Exception('User is not a member of this family.');
-        }
-
-        // Atomically check if the user is the last admin.
-        final bool isLastAdmin = family.adminUserIds.contains(userId) &&
-            family.adminUserIds.length == 1;
-        final bool hasOtherMembers = family.memberUserIds.length > 1;
-
-        if (isLastAdmin && hasOtherMembers) {
-          throw Exception('Cannot leave the family as the only administrator.');
-        }
-
-        // 1. Update the family document.
-        transaction.update(familyRef, {
-          'memberUserIds': FieldValue.arrayRemove([userId]),
-          'adminUserIds': FieldValue.arrayRemove([userId]),
-        });
-
-        // 2. Delete the member document from the subcollection.
-        final memberRef = familyRef.collection('members').doc(userId);
-        transaction.delete(memberRef);
-
-        // 3. Update the user's profile.
-        transaction.update(userRef, {
-          'familyIds': FieldValue.arrayRemove([familyId]),
-        });
-      });
-      debugPrint('FamilyService: Usuario eliminado de la familia con éxito.');
+      await batch.commit();
+      debugPrint('FamilyService: Usuario eliminado de la familia.');
     } catch (e) {
       debugPrint('FamilyService: Error al salir de la familia: $e');
       rethrow;
