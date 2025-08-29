@@ -9,11 +9,14 @@ service cloud.firestore {
     }
 
     // Helper function to check if a user is an admin of a specific family.
-    // This requires reading the family document.
     function isFamilyAdmin(familyId) {
-      let familyData = get(/databases/$(database)/documents/families/$(familyId)).data;
-      return isSignedIn() &&
-             request.auth.uid in familyData.adminUserIds;
+      let familyDoc = get(/databases/$(database)/documents/families/$(familyId));
+      // First, check if the document exists. If not, the user cannot be an admin.
+      if (!familyDoc.exists) {
+        return false;
+      }
+      // Now that we know it exists, we can safely access its data.
+      return isSignedIn() && (request.auth.uid in familyDoc.data.adminUserIds);
     }
 
     // Rules for the 'users' collection.
