@@ -118,7 +118,7 @@ export const inviteFamilyMember = functions.https.onCall(
 
       // Actualizar el documento de la familia
       const familyUpdateData: { [key: string]: any } = {
-          usersPending: admin.firestore.FieldValue.arrayUnion(invitedUserId),
+        usersPending: admin.firestore.FieldValue.arrayUnion(invitedUserId),
       };
 
       // FIX: Si el rol inicial es 'administrator', añadir también a 'adminUserIds' al invitar.
