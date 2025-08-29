@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hf_v3/features/family_structure/data/models/family.dart' as family_model;
 import 'package:hf_v3/features/family_structure/data/models/family_member.dart';
 import 'package:hf_v3/features/family_structure/presentation/controllers/family_controller.dart';
 import 'package:hf_v3/features/family_structure/presentation/pages/invite_member_screen.dart';
