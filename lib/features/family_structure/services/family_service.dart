@@ -393,6 +393,18 @@ class FamilyService {
     });
   }
 
+  // --- NEW: Get all members from the subcollection ---
+  Stream<List<FamilyMember>> getFamilyMembersStream(String familyId) {
+    return _firestore
+        .collection('families')
+        .doc(familyId)
+        .collection('members')
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => FamilyMember.fromFirestore(doc))
+            .toList());
+  }
+
 
   // --- Assign/Modify Member Role (Refactored) ---
   Future<void> updateMemberRole(
