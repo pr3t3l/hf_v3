@@ -1,10 +1,10 @@
-// hf_v3/lib/features/family_structure/presentation/pages/invite_member_screen.dart
+// lib/features/family_structure/presentation/pages/invite_member_screen.dart
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hf_v3/l10n/app_localizations.dart';
 import 'package:hf_v3/features/family_structure/presentation/controllers/family_controller.dart';
-// Removed unnecessary import: import 'package:flutter/foundation.dart'; // debugPrint is available via material.dart
+// Eliminado el import: import 'package:flutter/foundation.dart';
 
 class InviteMemberScreen extends ConsumerStatefulWidget {
   final String familyId;
@@ -23,7 +23,6 @@ class _InviteMemberScreenState extends ConsumerState<InviteMemberScreen> {
   bool _isDeceased = false; // For unregistered members
   bool _isPet = false; // For unregistered members
 
-  // Define available roles and relationship types
   final List<String> _roles = ['parent', 'child', 'guardian', 'administrator'];
   final List<String> _relationshipTypes = [
     'sibling',
@@ -47,11 +46,15 @@ class _InviteMemberScreenState extends ConsumerState<InviteMemberScreen> {
       debugPrint('InviteMemberScreen: Formulario validado.');
       final familyController = ref.read(familyControllerProvider.notifier);
       try {
+        final emailToInvite = _isRegisteredUser
+            ? _emailOrNameController.text.trim().toLowerCase()
+            : _emailOrNameController.text
+                  .trim(); // Normalize email to lowercase
         debugPrint(
           'InviteMemberScreen: Llamando a familyController.inviteMember con los siguientes datos:',
         );
         debugPrint('  familyId: ${widget.familyId}');
-        debugPrint('  emailOrName: ${_emailOrNameController.text.trim()}');
+        debugPrint('  emailOrName: $emailToInvite');
         debugPrint('  isRegisteredUser: $_isRegisteredUser');
         debugPrint('  initialRole: $_selectedRole');
         debugPrint('  initialRelationshipType: $_selectedRelationshipType');
@@ -60,7 +63,7 @@ class _InviteMemberScreenState extends ConsumerState<InviteMemberScreen> {
 
         await familyController.inviteMember(
           widget.familyId,
-          _emailOrNameController.text.trim(),
+          emailToInvite, // Usar el correo normalizado
           isRegisteredUser: _isRegisteredUser,
           initialRole: _selectedRole,
           initialRelationshipType: _selectedRelationshipType,
@@ -148,10 +151,11 @@ class _InviteMemberScreenState extends ConsumerState<InviteMemberScreen> {
                   onChanged: (bool value) {
                     setState(() {
                       _isRegisteredUser = value;
-                      // Reset specific fields when toggling
                       _isDeceased = false;
                       _isPet = false;
-                      _selectedRole = null; // Role only applies to registered
+                      _selectedRole = null;
+                      _selectedRelationshipType = null;
+                      _emailOrNameController.clear();
                     });
                   },
                 ),
@@ -163,8 +167,7 @@ class _InviteMemberScreenState extends ConsumerState<InviteMemberScreen> {
                         ? appLocalizations.emailLabel
                         : appLocalizations.memberNameLabel,
                     hintText: _isRegisteredUser
-                        ? appLocalizations
-                              .emailHint // Corrected to use getter
+                        ? appLocalizations.emailHint
                         : appLocalizations.memberNameHint,
                   ),
                   keyboardType: _isRegisteredUser
@@ -184,8 +187,6 @@ class _InviteMemberScreenState extends ConsumerState<InviteMemberScreen> {
                   },
                 ),
                 const SizedBox(height: 16.0),
-
-                // Initial Role for Registered Users
                 if (_isRegisteredUser) ...[
                   DropdownButtonFormField<String>(
                     value: _selectedRole,
@@ -196,9 +197,7 @@ class _InviteMemberScreenState extends ConsumerState<InviteMemberScreen> {
                     items: _roles.map((String role) {
                       return DropdownMenuItem<String>(
                         value: role,
-                        child: Text(
-                          appLocalizations.roleLabel(role),
-                        ), // Correctly uses method
+                        child: Text(appLocalizations.roleLabel(role)),
                       );
                     }).toList(),
                     onChanged: (String? newValue) {
@@ -215,8 +214,6 @@ class _InviteMemberScreenState extends ConsumerState<InviteMemberScreen> {
                   ),
                   const SizedBox(height: 16.0),
                 ],
-
-                // Relationship Type for both
                 DropdownButtonFormField<String>(
                   value: _selectedRelationshipType,
                   decoration: InputDecoration(
@@ -226,9 +223,7 @@ class _InviteMemberScreenState extends ConsumerState<InviteMemberScreen> {
                   items: _relationshipTypes.map((String type) {
                     return DropdownMenuItem<String>(
                       value: type,
-                      child: Text(
-                        appLocalizations.relationshipLabel(type),
-                      ), // Correctly uses method
+                      child: Text(appLocalizations.relationshipLabel(type)),
                     );
                   }).toList(),
                   onChanged: (String? newValue) {
@@ -254,8 +249,6 @@ class _InviteMemberScreenState extends ConsumerState<InviteMemberScreen> {
                   },
                 ),
                 const SizedBox(height: 16.0),
-
-                // Specific flags for Unregistered Members
                 if (!_isRegisteredUser) ...[
                   CheckboxListTile(
                     title: Text(appLocalizations.isDeceasedLabel),
@@ -263,15 +256,13 @@ class _InviteMemberScreenState extends ConsumerState<InviteMemberScreen> {
                     onChanged: (bool? value) {
                       setState(() {
                         _isDeceased = value ?? false;
-                        if (_isDeceased) _isPet = false; // Cannot be both
+                        if (_isDeceased) _isPet = false;
                         if (_isDeceased &&
                             _selectedRelationshipType != 'deceased') {
-                          _selectedRelationshipType =
-                              'deceased'; // Auto-set relationship
+                          _selectedRelationshipType = 'deceased';
                         } else if (!_isDeceased &&
                             _selectedRelationshipType == 'deceased') {
-                          _selectedRelationshipType =
-                              null; // Clear if unchecked
+                          _selectedRelationshipType = null;
                         }
                       });
                     },
@@ -282,21 +273,18 @@ class _InviteMemberScreenState extends ConsumerState<InviteMemberScreen> {
                     onChanged: (bool? value) {
                       setState(() {
                         _isPet = value ?? false;
-                        if (_isPet) _isDeceased = false; // Cannot be both
+                        if (_isPet) _isDeceased = false;
                         if (_isPet && _selectedRelationshipType != 'pet') {
-                          _selectedRelationshipType =
-                              'pet'; // Auto-set relationship
+                          _selectedRelationshipType = 'pet';
                         } else if (!_isPet &&
                             _selectedRelationshipType == 'pet') {
-                          _selectedRelationshipType =
-                              null; // Clear if unchecked
+                          _selectedRelationshipType = null;
                         }
                       });
                     },
                   ),
                   const SizedBox(height: 16.0),
                 ],
-
                 familyState.isLoading
                     ? CircularProgressIndicator(
                         color: Theme.of(context).colorScheme.primary,

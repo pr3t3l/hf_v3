@@ -2,63 +2,50 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function isSignedIn() {
-      return request.auth != null;
-    }
+    function signedIn() { return request.auth != null; }
 
-    // Helper function to check if a user is an admin of a specific family.
-    function isFamilyAdmin(familyId) {
-      let familyDoc = get(/databases/$(database)/documents/families/$(familyId));
-      return isSignedIn() &&
-             familyDoc.exists &&
-             (request.auth.uid in familyDoc.data.adminUserIds);
-    }
-
-    // Helper function to check if a user is a member of a specific family.
-    function isFamilyMember(familyId) {
-      let familyDoc = get(/databases/$(database)/documents/families/$(familyId));
-      return isSignedIn() &&
-             familyDoc.exists &&
-             (request.auth.uid in familyDoc.data.memberUserIds);
-    }
-
+    // Perfiles: solo el propio usuario
     match /users/{userId} {
-      allow create: if isSignedIn() && request.auth.uid == userId;
-      allow read, update, delete: if isSignedIn() && request.auth.uid == userId;
+      allow create: if signedIn() && request.auth.uid == userId;
+      allow read, update, delete: if signedIn() && request.auth.uid == userId;
     }
 
+    // Familias
     match /families/{familyId} {
-      // This function is now context-aware of the document being read/written.
-      function isMemberInDoc() {
-        return isSignedIn() &&
-               request.auth.uid in resource.data.memberUserIds;
-      }
-      
-      allow read: if isMemberInDoc();
-      // Allow members to update the family doc (e.g. to leave)
-      // and admins to do anything.
-      allow update: if isFamilyAdmin(familyId) || isMemberInDoc();
-      allow create: if isSignedIn();
+      allow create: if signedIn();
+
+      // Leer familia si soy admin, miembro o INVITADO (uid en usersPending)
+      allow read: if signedIn() && (
+        request.auth.uid in resource.data.adminUserIds ||
+        request.auth.uid in resource.data.memberUserIds ||
+        (resource.data.usersPending != null && request.auth.uid in resource.data.usersPending)
+      );
+
+      // Actualizar/eliminar solo admins
+      allow update, delete: if signedIn() &&
+        request.auth.uid in resource.data.adminUserIds;
     }
 
-    // Rules for the new 'members' subcollection
+    // Subcolección members: información pública dentro del contexto de la familia
     match /families/{familyId}/members/{memberUserId} {
-      // Any member of the family can read the details of any other member.
-      allow read: if isFamilyMember(familyId);
+      // Cualquier miembro puede leer la ficha de miembros
+      allow read: if signedIn() && (
+        request.auth.uid in get(/databases/$(database)/documents/families/$(familyId)).data.memberUserIds ||
+        request.auth.uid in get(/databases/$(database)/documents/families/$(familyId)).data.adminUserIds
+      );
 
-      // Only admins can update member documents (e.g., change roles).
-      allow update: if isFamilyAdmin(familyId);
-
-      // Admins can delete any member. A user can also delete their OWN member document.
-      allow delete: if isFamilyAdmin(familyId) || (isSignedIn() && request.auth.uid == memberUserId);
-
-      // A user can create their OWN member document (when creating/joining a family). Admins can also create.
-      allow create: if isFamilyAdmin(familyId) || (isSignedIn() && request.auth.uid == memberUserId);
+      // Crear/actualizar/eliminar: admin o el propio usuario para su doc
+      allow create, update, delete: if signedIn() && (
+        request.auth.uid in get(/databases/$(database)/documents/families/$(familyId)).data.adminUserIds ||
+        request.auth.uid == memberUserId
+      );
     }
 
+    // Invitaciones
     match /invitations/{invitationId} {
-      allow create: if isSignedIn();
-      allow read, update: if isSignedIn() && request.auth.uid == resource.data.invitedUserId;
+      // Opción A (recomendada por el doc): solo CF crea/borra; invitado puede leer/actualizar su estado
+      allow create, delete: if false;
+      allow read, update: if signedIn() && request.auth.uid == resource.data.invitedUserId;
     }
   }
 }
