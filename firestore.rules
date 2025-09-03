@@ -43,9 +43,15 @@ service cloud.firestore {
 
     // Invitaciones
     match /invitations/{invitationId} {
-      // Opción A (recomendada por el doc): solo CF crea/borra; invitado puede leer/actualizar su estado
-      allow create, delete: if false;
-      allow read, update: if signedIn() && request.auth.uid == resource.data.invitedUserId;
+      allow create, delete: if false; // Cloud Functions only
+
+      // Permitir leer/actualizar al invitado, o leer a un admin de la familia
+      allow read: if signedIn() && (
+        request.auth.uid == resource.data.invitedUserId ||
+        request.auth.uid in get(/databases/$(database)/documents/families/$(resource.data.familyId)).data.adminUserIds
+      );
+
+      allow update: if signedIn() && request.auth.uid == resource.data.invitedUserId;
     }
   }
 }
