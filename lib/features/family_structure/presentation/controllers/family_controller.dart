@@ -1,5 +1,6 @@
 // hf_v3/lib/features/family_structure/presentation/controllers/family_controller.dart
 
+import 'package:hf_v3/features/family_structure/data/models/invitation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hf_v3/features/family_structure/services/family_service.dart';
 import 'package:hf_v3/features/family_structure/data/models/family.dart'
@@ -24,6 +25,20 @@ final userFamiliesStreamProvider =
 final activeFamilyProvider = StateProvider<family_model.Family?>(
   (ref) => null,
 ); // Use alias here
+
+// NUEVO: Provider para obtener invitaciones pendientes de la familia activa
+final pendingInvitationsStreamProvider =
+    StreamProvider.autoDispose<List<Invitation>>((ref) {
+      final familyService = ref.read(familyServiceProvider);
+      final activeFamily = ref.watch(activeFamilyProvider);
+      if (activeFamily == null) {
+        // Retornar un stream vacío si no hay una familia activa
+        return Stream.value([]);
+      }
+      return familyService.getFamilyPendingInvitationsStream(
+        activeFamily.familyId,
+      );
+    });
 
 class FamilyController extends StateNotifier<AsyncValue<void>> {
   final FamilyService _familyService;

@@ -41,6 +41,21 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String get registeredMembersTitle => 'Miembros Registrados';
+
+  @override
+  String get pendingInvitationsTitle => 'Invitaciones Pendientes';
+
+  @override
+  String get invitedBy => 'Invitado por';
+
+  @override
+  String get pendingStatus => 'Pendiente';
+
+  @override
+  String get unregisteredMembersTitle => 'Otros Miembros de la Familia';
+
+  @override
   String get registerTitle => 'Registrarse';
 
   @override
@@ -226,12 +241,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get familyDetailsTitle => 'Detalles de la Familia';
-
-  @override
-  String get registeredMembersTitle => 'Miembros Registrados';
-
-  @override
-  String get unregisteredMembersTitle => 'Otros Miembros de la Familia';
 
   @override
   String get pendingMembersTitle => 'Miembros Pendientes';

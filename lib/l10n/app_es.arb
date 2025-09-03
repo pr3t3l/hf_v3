@@ -10,6 +10,11 @@
   "emailInvalid": "Por favor, introduce un correo electrónico válido.",
   "passwordRequired": "La contraseña es obligatoria.",
   "loginError": "Error al iniciar sesión: {error}",
+  "registeredMembersTitle": "Miembros Registrados",
+  "pendingInvitationsTitle": "Invitaciones Pendientes",
+  "unregisteredMembersTitle": "Miembros no registrados",
+  "invitedBy": "Invitado por",
+  "pendingStatus": "Pendiente",
   "@loginError": {
     "placeholders": {
       "error": {}

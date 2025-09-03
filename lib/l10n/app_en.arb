@@ -10,6 +10,11 @@
   "emailInvalid": "Please enter a valid email.",
   "passwordRequired": "Password is required.",
   "loginError": "Login failed: {error}",
+  "registeredMembersTitle": "Registered Members",
+  "pendingInvitationsTitle": "Pending Invitations",
+  "invitedBy": "Invited by",
+  "pendingStatus": "Pending",
+  "unregisteredMembersTitle": "Unregistered Members",
   "@loginError": {
     "placeholders": {
       "error": {}

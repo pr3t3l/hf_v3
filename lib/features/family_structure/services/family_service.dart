@@ -30,9 +30,12 @@ class FamilyService {
     final userId = currentUserId;
     if (userId == null) throw Exception("User not authenticated.");
 
-    final currentUserDoc =
-        await _firestore.collection('users').doc(userId).get();
-    if (!currentUserDoc.exists) throw Exception("Current user profile not found.");
+    final currentUserDoc = await _firestore
+        .collection('users')
+        .doc(userId)
+        .get();
+    if (!currentUserDoc.exists)
+      throw Exception("Current user profile not found.");
 
     final currentUserProfile = UserProfile.fromFirestore(currentUserDoc);
     final newFamilyRef = _firestore.collection('families').doc();
@@ -79,7 +82,10 @@ class FamilyService {
     }
 
     final String familyId = result.data['familyId'];
-    final familyDoc = await _firestore.collection('families').doc(familyId).get();
+    final familyDoc = await _firestore
+        .collection('families')
+        .doc(familyId)
+        .get();
     return family_model.Family.fromFirestore(familyDoc);
   }
 
@@ -106,7 +112,9 @@ class FamilyService {
 
   // --- Data Fetching ---
   Stream<family_model.Family> getFamilyStream(String familyId) {
-    return _firestore.collection('families').doc(familyId).snapshots().map((snapshot) {
+    return _firestore.collection('families').doc(familyId).snapshots().map((
+      snapshot,
+    ) {
       if (!snapshot.exists) throw Exception("Family not found.");
       return family_model.Family.fromFirestore(snapshot);
     });
@@ -114,14 +122,35 @@ class FamilyService {
 
   Stream<List<family_model.Family>> getUserFamiliesStream() {
     if (currentUserId == null) return Stream.value([]);
-    return _firestore.collection('users').doc(currentUserId).snapshots().asyncMap((userSnapshot) async {
-      if (!userSnapshot.exists) return [];
-      final userProfile = UserProfile.fromFirestore(userSnapshot);
-      if (userProfile.familyIds.isEmpty) return [];
+    return _firestore
+        .collection('users')
+        .doc(currentUserId)
+        .snapshots()
+        .asyncMap((userSnapshot) async {
+          if (!userSnapshot.exists) return [];
+          final userProfile = UserProfile.fromFirestore(userSnapshot);
+          if (userProfile.familyIds.isEmpty) return [];
 
-      final familyDocs = await Future.wait(userProfile.familyIds.map((id) => _firestore.collection('families').doc(id).get()));
-      return familyDocs.where((doc) => doc.exists).map((doc) => family_model.Family.fromFirestore(doc)).toList();
-    });
+          final familyDocs = await Future.wait(
+            userProfile.familyIds.map(
+              (id) => _firestore.collection('families').doc(id).get(),
+            ),
+          );
+          return familyDocs
+              .where((doc) => doc.exists)
+              .map((doc) => family_model.Family.fromFirestore(doc))
+              .toList();
+        });
+  }
+
+  // Nuevo método: Obtener invitaciones pendientes de una familia
+  Stream<List<Invitation>> getFamilyPendingInvitationsStream(String familyId) {
+    return _firestore
+        .collection('invitations')
+        .where('familyId', isEqualTo: familyId)
+        .where('status', isEqualTo: 'pending')
+        .snapshots()
+        .map((s) => s.docs.map((d) => Invitation.fromFirestore(d)).toList());
   }
 
   Stream<List<Invitation>> getPendingInvitationsStream() {
@@ -150,7 +179,10 @@ class FamilyService {
 
   Future<String> getFamilyName(String familyId) async {
     try {
-      final familyDoc = await _firestore.collection('families').doc(familyId).get();
+      final familyDoc = await _firestore
+          .collection('families')
+          .doc(familyId)
+          .get();
       if (familyDoc.exists) {
         return family_model.Family.fromFirestore(familyDoc).familyName;
       }
@@ -178,39 +210,57 @@ class FamilyService {
         .doc(memberId)
         .snapshots()
         .map((d) {
-      if (!d.exists) throw Exception('Member document not found.');
-      return FamilyMember.fromFirestore(d);
-    });
+          if (!d.exists) throw Exception('Member document not found.');
+          return FamilyMember.fromFirestore(d);
+        });
   }
 
   Future<String> getUserDisplayName(String userId, {String? familyId}) async {
     if (familyId != null) {
-      final memberDoc = await _firestore.collection('families').doc(familyId).collection('members').doc(userId).get();
+      final memberDoc = await _firestore
+          .collection('families')
+          .doc(familyId)
+          .collection('members')
+          .doc(userId)
+          .get();
       if (memberDoc.exists && memberDoc.data()!.containsKey('displayName')) {
         return memberDoc.data()!['displayName'];
       }
     }
     final userDoc = await _firestore.collection('users').doc(userId).get();
-    return userDoc.exists ? UserProfile.fromFirestore(userDoc).displayName : 'Unknown User';
+    return userDoc.exists
+        ? UserProfile.fromFirestore(userDoc).displayName
+        : 'Unknown User';
   }
 
   // --- Member Actions (Refactored) ---
-  Future<void> updateMemberRole(String familyId, String memberUserId, String newRole) async {
+  Future<void> updateMemberRole(
+    String familyId,
+    String memberUserId,
+    String newRole,
+  ) async {
     final familyRef = _firestore.collection('families').doc(familyId);
     final memberRef = familyRef.collection('members').doc(memberUserId);
     await memberRef.update({'role': newRole});
   }
 
-  Future<void> removeUnregisteredMember(String familyId, String memberIdToRemove) async {
+  Future<void> removeUnregisteredMember(
+    String familyId,
+    String memberIdToRemove,
+  ) async {
     final familyRef = _firestore.collection('families').doc(familyId);
     final familyDoc = await familyRef.get();
     if (!familyDoc.exists) throw Exception("Family not found.");
 
     final family = family_model.Family.fromFirestore(familyDoc);
-    final updatedUnregisteredMembers = family.unregisteredMembers.where((m) => m.memberId != memberIdToRemove).toList();
+    final updatedUnregisteredMembers = family.unregisteredMembers
+        .where((m) => m.memberId != memberIdToRemove)
+        .toList();
 
     await familyRef.update({
-      'unregisteredMembers': updatedUnregisteredMembers.map((m) => m.toFirestore()).toList(),
+      'unregisteredMembers': updatedUnregisteredMembers
+          .map((m) => m.toFirestore())
+          .toList(),
     });
   }
 
@@ -226,9 +276,12 @@ class FamilyService {
       if (!familyDoc.exists) throw Exception('Family not found.');
 
       final family = family_model.Family.fromFirestore(familyDoc);
-      if (!family.memberUserIds.contains(userId)) throw Exception('User is not a member of this family.');
+      if (!family.memberUserIds.contains(userId))
+        throw Exception('User is not a member of this family.');
 
-      final bool isLastAdmin = family.adminUserIds.contains(userId) && family.adminUserIds.length == 1;
+      final bool isLastAdmin =
+          family.adminUserIds.contains(userId) &&
+          family.adminUserIds.length == 1;
       if (isLastAdmin && family.memberUserIds.length > 1) {
         throw Exception('Cannot leave the family as the only administrator.');
       }
@@ -240,12 +293,16 @@ class FamilyService {
 
       final memberRef = familyRef.collection('members').doc(userId);
       transaction.delete(memberRef);
-      transaction.update(userRef, {'familyIds': FieldValue.arrayRemove([familyId])});
+      transaction.update(userRef, {
+        'familyIds': FieldValue.arrayRemove([familyId]),
+      });
     });
   }
 
   Future<void> declineInvitation(String invitationId) async {
     if (currentUserId == null) throw Exception("User not authenticated.");
-    await _firestore.collection('invitations').doc(invitationId).update({'status': 'declined'});
+    await _firestore.collection('invitations').doc(invitationId).update({
+      'status': 'declined',
+    });
   }
 }

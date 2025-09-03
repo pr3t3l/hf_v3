@@ -206,7 +206,6 @@ export const joinFamily = functions.https.onCall(
       memberUserIds: any[];
       usersPending: string[];
     };
-    const userData = userDoc.data() as { displayName?: string };
 
     // 4. Validar que el usuario no sea ya un miembro
     if (familyData?.memberUserIds?.some((m: any) => m.userId === userId)) {
@@ -220,18 +219,16 @@ export const joinFamily = functions.https.onCall(
 
     // 5. Actualizar el documento de la familia:
     //    - Mover al usuario de 'usersPending' a 'memberUserIds'.
-    //    - Importante: No usar arrayUnion para objetos complejos. Reconstruimos el array.
-    const newMember = {
-      userId,
-      role: invitationData.initialRole || "child",
-      displayName: userData.displayName ?? "Usuario",
-    };
-
-    const updatedMemberUserIds = [...familyData.memberUserIds, newMember];
+    //    - Corregido para añadir solo el UID al array.
+    const updatedMemberUserIds = [...familyData.memberUserIds, userId]; // AHORA ES CORRECTO
     const updatedUsersPending = familyData.usersPending.filter(
       (uid: string) => uid !== userId
     );
 
+    batch.update(familyDoc.ref, {
+      memberUserIds: updatedMemberUserIds,
+      usersPending: updatedUsersPending,
+    });
     batch.update(familyDoc.ref, {
       memberUserIds: updatedMemberUserIds,
       usersPending: updatedUsersPending,

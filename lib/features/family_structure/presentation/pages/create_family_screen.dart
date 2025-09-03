@@ -26,43 +26,28 @@ class _CreateFamilyScreenState extends ConsumerState<CreateFamilyScreen> {
     if (_formKey.currentState!.validate()) {
       final familyController = ref.read(familyControllerProvider.notifier);
       try {
-        // Llama al controlador para crear la familia y obtener su ID.
-        final newFamilyId = await familyController.createFamily(
-          _familyNameController.text.trim(),
-        );
+        await familyController.createFamily(_familyNameController.text.trim());
 
         if (mounted) {
-          // Espera a que el stream de familias del usuario se actualice con la nueva familia.
-          // Usamos .future para obtener la primera emisión después de la actualización.
-          final families = await ref.read(userFamiliesStreamProvider.future);
-
-          // Verifica si la nueva familia está presente en la lista actualizada.
-          if (families.any((f) => f.familyId == newFamilyId)) {
-            if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  AppLocalizations.of(context)!.familyCreatedSuccess,
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onPrimary,
-                  ),
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                AppLocalizations.of(context)!.familyCreatedSuccess,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onPrimary,
                 ),
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                margin: const EdgeInsets.all(16),
               ),
-            );
-            // Navega de vuelta a la pantalla de selección de familia.
-            if (!mounted) return;
-            Navigator.of(context).pop();
-          } else {
-            // Si por alguna razón la familia no aparece en el stream después de un tiempo,
-            // podríamos considerar esto un error o un problema de sincronización.
-            throw Exception("Family created but not reflected in stream.");
-          }
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              margin: const EdgeInsets.all(16),
+            ),
+          );
+          // Navega de vuelta a la pantalla de selección de familia.
+          if (!mounted) return;
+          Navigator.of(context).pop();
         }
       } catch (e) {
         if (!mounted) return;

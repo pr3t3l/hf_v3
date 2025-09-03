@@ -3,12 +3,29 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hf_v3/features/family_structure/data/models/family.dart'
     as family_model;
 import 'package:hf_v3/features/family_structure/data/models/family_member.dart';
+import 'package:hf_v3/features/family_structure/data/models/invitation.dart';
 import 'package:hf_v3/features/family_structure/presentation/controllers/family_controller.dart';
 import 'package:hf_v3/features/family_structure/presentation/pages/invite_member_screen.dart';
 import 'package:hf_v3/features/family_structure/presentation/pages/manage_roles_screen.dart';
 import 'package:hf_v3/features/family_structure/presentation/pages/family_tree_screen.dart';
 import 'package:hf_v3/features/family_structure/services/family_service.dart';
 import 'package:hf_v3/l10n/app_localizations.dart';
+
+// Helper providers to avoid re-watching the same stream
+final familyStreamProvider = StreamProvider.autoDispose
+    .family<family_model.Family, String>((ref, familyId) {
+      return ref.watch(familyServiceProvider).getFamilyStream(familyId);
+    });
+
+final familyMembersStreamProvider = StreamProvider.autoDispose
+    .family<List<FamilyMember>, String>((ref, familyId) {
+      return ref.watch(familyServiceProvider).getFamilyMembersStream(familyId);
+    });
+
+final pendingInvitationsStreamProvider = StreamProvider.autoDispose
+    .family<List<Invitation>, String>((ref, userId) {
+      return ref.watch(familyServiceProvider).getPendingInvitationsStream();
+    });
 
 class FamilyDetailsScreen extends ConsumerWidget {
   final String familyId;
@@ -51,29 +68,30 @@ class FamilyDetailsScreen extends ConsumerWidget {
                   appLocalizations,
                 ),
                 const SizedBox(height: 24),
-                if (family.usersPending.isNotEmpty) ...[
-                  _buildSectionTitle(
+
+                // Nuevo: Sección para invitaciones pendientes. Solo visible para administradores.
+                if (isAdmin)
+                  _buildPendingInvitations(
                     context,
-                    appLocalizations.pendingMembersTitle,
-                  ),
-                  _buildPendingList(
-                    familyService,
-                    family.usersPending,
+                    ref,
+                    currentUserId,
                     appLocalizations,
                   ),
+
+                if (family.unregisteredMembers.isNotEmpty) ...[
                   const SizedBox(height: 24),
+                  _buildSectionTitle(
+                    context,
+                    appLocalizations.unregisteredMembersTitle,
+                  ),
+                  _buildUnregisteredList(
+                    context,
+                    ref,
+                    family,
+                    isAdmin,
+                    appLocalizations,
+                  ),
                 ],
-                _buildSectionTitle(
-                  context,
-                  appLocalizations.unregisteredMembersTitle,
-                ),
-                _buildUnregisteredList(
-                  context,
-                  ref,
-                  family,
-                  isAdmin,
-                  appLocalizations,
-                ),
                 const SizedBox(height: 24),
                 if (isAdmin)
                   ElevatedButton(
@@ -139,10 +157,11 @@ class FamilyDetailsScreen extends ConsumerWidget {
         await ref.read(familyControllerProvider.notifier).leaveFamily(familyId);
         if (context.mounted) Navigator.of(context).pop();
       } catch (e) {
-        if (context.mounted)
+        if (context.mounted) {
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(SnackBar(content: Text(e.toString())));
+        }
       }
     }
   }
@@ -194,30 +213,49 @@ class FamilyDetailsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildPendingList(
-    FamilyService familyService,
-    List<String> pendingUids,
+  // Nuevo método para construir la lista de invitaciones pendientes
+  Widget _buildPendingInvitations(
+    BuildContext context,
+    WidgetRef ref,
+    String? currentUserId,
     AppLocalizations localizations,
   ) {
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: pendingUids.length,
-      itemBuilder: (context, index) {
-        final pendingUid = pendingUids[index];
-        return Card(
-          child: FutureBuilder<String>(
-            future: familyService.getUserDisplayName(pendingUid),
-            builder: (context, snapshot) {
-              return ListTile(
-                leading: const Icon(Icons.hourglass_top),
-                title: Text(snapshot.data ?? '...'),
-                subtitle: Text(localizations.pendingMemberStatus),
-              );
-            },
-          ),
-        );
-      },
+    final pendingInvitationsAsyncValue = ref.watch(
+      pendingInvitationsStreamProvider(currentUserId!),
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionTitle(context, localizations.pendingInvitationsTitle),
+        pendingInvitationsAsyncValue.when(
+          data: (invitations) {
+            if (invitations.isEmpty) {
+              return const SizedBox.shrink();
+            }
+            return ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: invitations.length,
+              itemBuilder: (context, index) {
+                final invitation = invitations[index];
+                return Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.person_add),
+                    title: Text(invitation.invitedEmail),
+                    subtitle: Text(
+                      '${localizations.invitedBy}: ${invitation.invitedByDisplayName}',
+                    ),
+                    trailing: Text(localizations.pendingStatus),
+                  ),
+                );
+              },
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, st) => Text('Error: $e'),
+        ),
+      ],
     );
   }
 
@@ -260,14 +298,3 @@ class FamilyDetailsScreen extends ConsumerWidget {
     );
   }
 }
-
-// Helper providers to avoid re-watching the same stream
-final familyStreamProvider = StreamProvider.autoDispose
-    .family<family_model.Family, String>((ref, familyId) {
-      return ref.watch(familyServiceProvider).getFamilyStream(familyId);
-    });
-
-final familyMembersStreamProvider = StreamProvider.autoDispose
-    .family<List<FamilyMember>, String>((ref, familyId) {
-      return ref.watch(familyServiceProvider).getFamilyMembersStream(familyId);
-    });

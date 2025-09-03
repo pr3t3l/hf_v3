@@ -155,6 +155,36 @@ abstract class AppLocalizations {
   /// **'Login failed: {error}'**
   String loginError(Object error);
 
+  /// No description provided for @registeredMembersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Registered Members'**
+  String get registeredMembersTitle;
+
+  /// No description provided for @pendingInvitationsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending Invitations'**
+  String get pendingInvitationsTitle;
+
+  /// No description provided for @invitedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Invited by'**
+  String get invitedBy;
+
+  /// No description provided for @pendingStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get pendingStatus;
+
+  /// No description provided for @unregisteredMembersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Other Family Members'**
+  String get unregisteredMembersTitle;
+
   /// No description provided for @registerTitle.
   ///
   /// In en, this message translates to:
@@ -472,18 +502,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Family Details'**
   String get familyDetailsTitle;
-
-  /// No description provided for @registeredMembersTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Registered Members'**
-  String get registeredMembersTitle;
-
-  /// No description provided for @unregisteredMembersTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Other Family Members'**
-  String get unregisteredMembersTitle;
 
   /// No description provided for @pendingMembersTitle.
   ///
