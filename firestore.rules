@@ -1,0 +1,51 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+
+    // Perfiles: solo el propio usuario
+    match /users/{userId} {
+      allow create: if signedIn() && request.auth.uid == userId;
+      allow read, update, delete: if signedIn() && request.auth.uid == userId;
+    }
+
+    // Familias
+    match /families/{familyId} {
+      allow create: if signedIn();
+
+      // Leer familia si soy admin, miembro o INVITADO (uid en usersPending)
+      allow read: if signedIn() && (
+        request.auth.uid in resource.data.adminUserIds ||
+        request.auth.uid in resource.data.memberUserIds ||
+        (resource.data.usersPending != null && request.auth.uid in resource.data.usersPending)
+      );
+
+      // Actualizar/eliminar solo admins
+      allow update, delete: if signedIn() &&
+        request.auth.uid in resource.data.adminUserIds;
+    }
+
+    // Subcolección members: información pública dentro del contexto de la familia
+    match /families/{familyId}/members/{memberUserId} {
+      // Cualquier miembro puede leer la ficha de miembros
+      allow read: if signedIn() && (
+        request.auth.uid in get(/databases/$(database)/documents/families/$(familyId)).data.memberUserIds ||
+        request.auth.uid in get(/databases/$(database)/documents/families/$(familyId)).data.adminUserIds
+      );
+
+      // Crear/actualizar/eliminar: admin o el propio usuario para su doc
+      allow create, update, delete: if signedIn() && (
+        request.auth.uid in get(/databases/$(database)/documents/families/$(familyId)).data.adminUserIds ||
+        request.auth.uid == memberUserId
+      );
+    }
+
+    // Invitaciones
+    match /invitations/{invitationId} {
+      // Opción A (recomendada por el doc): solo CF crea/borra; invitado puede leer/actualizar su estado
+      allow create, delete: if false;
+      allow read, update: if signedIn() && request.auth.uid == resource.data.invitedUserId;
+    }
+  }
+}

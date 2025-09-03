@@ -27,6 +27,7 @@ class _CreateFamilyScreenState extends ConsumerState<CreateFamilyScreen> {
       final familyController = ref.read(familyControllerProvider.notifier);
       try {
         await familyController.createFamily(_familyNameController.text.trim());
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -44,7 +45,9 @@ class _CreateFamilyScreenState extends ConsumerState<CreateFamilyScreen> {
               margin: const EdgeInsets.all(16),
             ),
           );
-          Navigator.of(context).pop(); // Go back to family selection screen
+          // Navega de vuelta a la pantalla de selección de familia.
+          if (!mounted) return;
+          Navigator.of(context).pop();
         }
       } catch (e) {
         if (!mounted) return;

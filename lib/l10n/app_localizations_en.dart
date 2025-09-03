@@ -41,6 +41,21 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get registeredMembersTitle => 'Registered Members';
+
+  @override
+  String get pendingInvitationsTitle => 'Pending Invitations';
+
+  @override
+  String get invitedBy => 'Invited by';
+
+  @override
+  String get pendingStatus => 'Pending';
+
+  @override
+  String get unregisteredMembersTitle => 'Other Family Members';
+
+  @override
   String get registerTitle => 'Register';
 
   @override
@@ -59,7 +74,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get confirmPasswordLabel => 'Confirm Password';
 
   @override
-  String get passwordWeak => 'Password must be at least 8 characters, include an uppercase letter, a number, and a special character.';
+  String get passwordWeak =>
+      'Password must be at least 8 characters, include an uppercase letter, a number, and a special character.';
 
   @override
   String get passwordMismatch => 'Passwords do not match.';
@@ -79,7 +95,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sendResetLinkButton => 'Send Reset Link';
 
   @override
-  String get passwordResetEmailSent => 'Password reset email sent. Check your inbox.';
+  String get passwordResetEmailSent =>
+      'Password reset email sent. Check your inbox.';
 
   @override
   String passwordResetError(Object error) {
@@ -119,7 +136,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get familySelectionTitle => 'Family Hub';
 
   @override
-  String get noFamilyMessage => 'You don\'t belong to any family yet. Create one or join an existing one!';
+  String get noFamilyMessage =>
+      'You don\'t belong to any family yet. Create one or join an existing one!';
 
   @override
   String get createFamilyButton => 'Create New Family';
@@ -153,7 +171,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get createFamilyTitle => 'Create New Family';
 
   @override
-  String get createFamilyDescription => 'Give your family a name to get started!';
+  String get createFamilyDescription =>
+      'Give your family a name to get started!';
 
   @override
   String get familyNameLabel => 'Family Name';
@@ -188,7 +207,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get invitationCodeRequired => 'Invitation code is required.';
 
   @override
-  String get invitationCodeInvalidLength => 'Invitation code must be 8 characters long.';
+  String get invitationCodeInvalidLength =>
+      'Invitation code must be 8 characters long.';
 
   @override
   String get invitationDetailsTitle => 'Invitation Details';
@@ -209,7 +229,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get noInvitationFound => 'No valid pending invitation found for this code.';
+  String invitationRelationship(Object relationshipType) {
+    return 'Relationship: $relationshipType';
+  }
+
+  @override
+  String get noInvitationFound =>
+      'No valid pending invitation found for this code.';
 
   @override
   String get familyJoinedSuccess => 'Successfully joined the family!';
@@ -223,10 +249,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get familyDetailsTitle => 'Family Details';
 
   @override
-  String get registeredMembersTitle => 'Registered Members';
+  String get pendingMembersTitle => 'Pending Members';
 
   @override
-  String get unregisteredMembersTitle => 'Other Family Members';
+  String get pendingMemberStatus => 'Invitation pending';
 
   @override
   String get confirmDeleteTitle => 'Confirm Deletion';
@@ -248,6 +274,27 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String memberRemovedError(Object error) {
     return 'Failed to remove member: $error';
+  }
+
+  @override
+  String get leaveFamilyButton => 'Leave Family';
+
+  @override
+  String get confirmLeaveFamilyTitle => 'Confirm Leave';
+
+  @override
+  String get confirmLeaveFamilyMessage =>
+      'Are you sure you want to leave this family?';
+
+  @override
+  String get leaveButton => 'Leave';
+
+  @override
+  String get leaveFamilySuccess => 'You have left the family.';
+
+  @override
+  String leaveFamilyError(Object error) {
+    return 'Failed to leave family: $error';
   }
 
   @override
@@ -402,33 +449,27 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String roleLabel(String type) {
-    String _temp0 = intl.Intl.selectLogic(
-      type,
-      {
-        'parent': 'Parent',
-        'child': 'Child',
-        'guardian': 'Guardian',
-        'administrator': 'Administrator',
-        'other': 'Other',
-      },
-    );
+    String _temp0 = intl.Intl.selectLogic(type, {
+      'parent': 'Parent',
+      'child': 'Child',
+      'guardian': 'Guardian',
+      'administrator': 'Administrator',
+      'other': 'Other',
+    });
     return '$_temp0';
   }
 
   @override
   String relationshipLabel(String type) {
-    String _temp0 = intl.Intl.selectLogic(
-      type,
-      {
-        'sibling': 'Sibling',
-        'spouse': 'Spouse',
-        'cousin': 'Cousin',
-        'grandparent': 'Grandparent',
-        'other': 'Other',
-        'pet': 'Pet',
-        'deceased': 'Deceased',
-      },
-    );
+    String _temp0 = intl.Intl.selectLogic(type, {
+      'sibling': 'Sibling',
+      'spouse': 'Spouse',
+      'cousin': 'Cousin',
+      'grandparent': 'Grandparent',
+      'other': 'Other',
+      'pet': 'Pet',
+      'deceased': 'Deceased',
+    });
     return '$_temp0';
   }
 
@@ -437,37 +478,4 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get emailHint => 'Enter email';
-
-  @override
-  String get role_parent => 'Parent';
-
-  @override
-  String get role_child => 'Child';
-
-  @override
-  String get role_guardian => 'Guardian';
-
-  @override
-  String get role_administrator => 'Administrator';
-
-  @override
-  String get relationship_sibling => 'Sibling';
-
-  @override
-  String get relationship_spouse => 'Spouse';
-
-  @override
-  String get relationship_cousin => 'Cousin';
-
-  @override
-  String get relationship_grandparent => 'Grandparent';
-
-  @override
-  String get relationship_other => 'Other';
-
-  @override
-  String get relationship_pet => 'Pet';
-
-  @override
-  String get relationship_deceased => 'Deceased';
 }

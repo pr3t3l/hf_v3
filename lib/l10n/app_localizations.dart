@@ -62,7 +62,8 @@ import 'app_localizations_es.dart';
 /// be consistent with the languages listed in the AppLocalizations.supportedLocales
 /// property.
 abstract class AppLocalizations {
-  AppLocalizations(String locale) : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+  AppLocalizations(String locale)
+    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -70,7 +71,8 @@ abstract class AppLocalizations {
     return Localizations.of<AppLocalizations>(context, AppLocalizations);
   }
 
-  static const LocalizationsDelegate<AppLocalizations> delegate = _AppLocalizationsDelegate();
+  static const LocalizationsDelegate<AppLocalizations> delegate =
+      _AppLocalizationsDelegate();
 
   /// A list of this localizations delegate along with the default localizations
   /// delegates.
@@ -82,17 +84,18 @@ abstract class AppLocalizations {
   /// Additional delegates can be added by appending to this list in
   /// MaterialApp. This list does not have to be used at all if a custom list
   /// of delegates is preferred or required.
-  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates = <LocalizationsDelegate<dynamic>>[
-    delegate,
-    GlobalMaterialLocalizations.delegate,
-    GlobalCupertinoLocalizations.delegate,
-    GlobalWidgetsLocalizations.delegate,
-  ];
+  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
+      <LocalizationsDelegate<dynamic>>[
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
-    Locale('es')
+    Locale('es'),
   ];
 
   /// No description provided for @loginTitle.
@@ -154,6 +157,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Login failed: {error}'**
   String loginError(Object error);
+
+  /// No description provided for @registeredMembersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Registered Members'**
+  String get registeredMembersTitle;
+
+  /// No description provided for @pendingInvitationsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending Invitations'**
+  String get pendingInvitationsTitle;
+
+  /// No description provided for @invitedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Invited by'**
+  String get invitedBy;
+
+  /// No description provided for @pendingStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get pendingStatus;
+
+  /// No description provided for @unregisteredMembersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Other Family Members'**
+  String get unregisteredMembersTitle;
 
   /// No description provided for @registerTitle.
   ///
@@ -443,6 +476,12 @@ abstract class AppLocalizations {
   /// **'Expires: {date}'**
   String invitationExpires(Object date);
 
+  /// No description provided for @invitationRelationship.
+  ///
+  /// In en, this message translates to:
+  /// **'Relationship: {relationshipType}'**
+  String invitationRelationship(Object relationshipType);
+
   /// No description provided for @noInvitationFound.
   ///
   /// In en, this message translates to:
@@ -467,17 +506,17 @@ abstract class AppLocalizations {
   /// **'Family Details'**
   String get familyDetailsTitle;
 
-  /// No description provided for @registeredMembersTitle.
+  /// No description provided for @pendingMembersTitle.
   ///
   /// In en, this message translates to:
-  /// **'Registered Members'**
-  String get registeredMembersTitle;
+  /// **'Pending Members'**
+  String get pendingMembersTitle;
 
-  /// No description provided for @unregisteredMembersTitle.
+  /// No description provided for @pendingMemberStatus.
   ///
   /// In en, this message translates to:
-  /// **'Other Family Members'**
-  String get unregisteredMembersTitle;
+  /// **'Invitation pending'**
+  String get pendingMemberStatus;
 
   /// No description provided for @confirmDeleteTitle.
   ///
@@ -514,6 +553,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to remove member: {error}'**
   String memberRemovedError(Object error);
+
+  /// No description provided for @leaveFamilyButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave Family'**
+  String get leaveFamilyButton;
+
+  /// No description provided for @confirmLeaveFamilyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Leave'**
+  String get confirmLeaveFamilyTitle;
+
+  /// No description provided for @confirmLeaveFamilyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to leave this family?'**
+  String get confirmLeaveFamilyMessage;
+
+  /// No description provided for @leaveButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave'**
+  String get leaveButton;
+
+  /// No description provided for @leaveFamilySuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'You have left the family.'**
+  String get leaveFamilySuccess;
+
+  /// No description provided for @leaveFamilyError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to leave family: {error}'**
+  String leaveFamilyError(Object error);
 
   /// No description provided for @inviteMemberButton.
   ///
@@ -802,75 +877,10 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enter email'**
   String get emailHint;
-
-  /// No description provided for @role_parent.
-  ///
-  /// In en, this message translates to:
-  /// **'Parent'**
-  String get role_parent;
-
-  /// No description provided for @role_child.
-  ///
-  /// In en, this message translates to:
-  /// **'Child'**
-  String get role_child;
-
-  /// No description provided for @role_guardian.
-  ///
-  /// In en, this message translates to:
-  /// **'Guardian'**
-  String get role_guardian;
-
-  /// No description provided for @role_administrator.
-  ///
-  /// In en, this message translates to:
-  /// **'Administrator'**
-  String get role_administrator;
-
-  /// No description provided for @relationship_sibling.
-  ///
-  /// In en, this message translates to:
-  /// **'Sibling'**
-  String get relationship_sibling;
-
-  /// No description provided for @relationship_spouse.
-  ///
-  /// In en, this message translates to:
-  /// **'Spouse'**
-  String get relationship_spouse;
-
-  /// No description provided for @relationship_cousin.
-  ///
-  /// In en, this message translates to:
-  /// **'Cousin'**
-  String get relationship_cousin;
-
-  /// No description provided for @relationship_grandparent.
-  ///
-  /// In en, this message translates to:
-  /// **'Grandparent'**
-  String get relationship_grandparent;
-
-  /// No description provided for @relationship_other.
-  ///
-  /// In en, this message translates to:
-  /// **'Other'**
-  String get relationship_other;
-
-  /// No description provided for @relationship_pet.
-  ///
-  /// In en, this message translates to:
-  /// **'Pet'**
-  String get relationship_pet;
-
-  /// No description provided for @relationship_deceased.
-  ///
-  /// In en, this message translates to:
-  /// **'Deceased'**
-  String get relationship_deceased;
 }
 
-class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
+class _AppLocalizationsDelegate
+    extends LocalizationsDelegate<AppLocalizations> {
   const _AppLocalizationsDelegate();
 
   @override
@@ -879,25 +889,26 @@ class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> 
   }
 
   @override
-  bool isSupported(Locale locale) => <String>['en', 'es'].contains(locale.languageCode);
+  bool isSupported(Locale locale) =>
+      <String>['en', 'es'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
 }
 
 AppLocalizations lookupAppLocalizations(Locale locale) {
-
-
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
-    case 'en': return AppLocalizationsEn();
-    case 'es': return AppLocalizationsEs();
+    case 'en':
+      return AppLocalizationsEn();
+    case 'es':
+      return AppLocalizationsEs();
   }
 
   throw FlutterError(
     'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
     'an issue with the localizations generation tool. Please file an issue '
     'on GitHub with a reproducible sample app and the gen-l10n configuration '
-    'that was used.'
+    'that was used.',
   );
 }

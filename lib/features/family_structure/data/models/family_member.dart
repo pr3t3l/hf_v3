@@ -1,8 +1,10 @@
-// hf_v3/lib/features/family_structure/data/models/family_member.dart
+import 'package:cloud_firestore/cloud_firestore.dart';
 
+// Represents the data for a registered member, fetched from the /families/{familyId}/members/{userId} subcollection.
+// This is primarily a UI/service-layer model.
 class FamilyMember {
   final String userId;
-  final String role; // e.g., 'parent', 'child', 'sibling', 'administrator'
+  final String role;
   final String displayName;
 
   FamilyMember({
@@ -11,15 +13,13 @@ class FamilyMember {
     required this.displayName,
   });
 
-  factory FamilyMember.fromMap(Map<String, dynamic> map) {
+  factory FamilyMember.fromFirestore(
+      DocumentSnapshot<Map<String, dynamic>> doc) {
+    final data = doc.data()!;
     return FamilyMember(
-      userId: map['userId'] ?? '',
-      role: map['role'] ?? '',
-      displayName: map['displayName'] ?? '',
+      userId: doc.id,
+      role: data['role'] ?? 'member',
+      displayName: data['displayName'] ?? 'Unknown Member',
     );
-  }
-
-  Map<String, dynamic> toFirestore() {
-    return {'userId': userId, 'role': role, 'displayName': displayName};
   }
 }

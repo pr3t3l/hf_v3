@@ -1,13 +1,31 @@
-// hf_v3/lib/features/family_structure/presentation/pages/family_details_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hf_v3/l10n/app_localizations.dart';
+import 'package:hf_v3/features/family_structure/data/models/family.dart'
+    as family_model;
+import 'package:hf_v3/features/family_structure/data/models/family_member.dart';
+import 'package:hf_v3/features/family_structure/data/models/invitation.dart';
 import 'package:hf_v3/features/family_structure/presentation/controllers/family_controller.dart';
-// Removed direct imports for Family, FamilyMember, UnregisteredMember as they are accessed via family object
 import 'package:hf_v3/features/family_structure/presentation/pages/invite_member_screen.dart';
 import 'package:hf_v3/features/family_structure/presentation/pages/manage_roles_screen.dart';
-import 'package:hf_v3/features/family_structure/services/family_service.dart'; // Needed for currentUserId
+import 'package:hf_v3/features/family_structure/presentation/pages/family_tree_screen.dart';
+import 'package:hf_v3/features/family_structure/services/family_service.dart';
+import 'package:hf_v3/l10n/app_localizations.dart';
+
+// Helper providers to avoid re-watching the same stream
+final familyStreamProvider = StreamProvider.autoDispose
+    .family<family_model.Family, String>((ref, familyId) {
+      return ref.watch(familyServiceProvider).getFamilyStream(familyId);
+    });
+
+final familyMembersStreamProvider = StreamProvider.autoDispose
+    .family<List<FamilyMember>, String>((ref, familyId) {
+      return ref.watch(familyServiceProvider).getFamilyMembersStream(familyId);
+    });
+
+final pendingInvitationsStreamProvider = StreamProvider.autoDispose
+    .family<List<Invitation>, String>((ref, userId) {
+      return ref.watch(familyServiceProvider).getPendingInvitationsStream();
+    });
 
 class FamilyDetailsScreen extends ConsumerWidget {
   final String familyId;
@@ -15,293 +33,268 @@ class FamilyDetailsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final familyAsyncValue = ref.watch(familyStreamProvider(familyId));
+    final familyService = ref.watch(familyServiceProvider);
+    final currentUserId = familyService.currentUserId;
     final appLocalizations = AppLocalizations.of(context)!;
-
-    String getRoleTranslation(String role) {
-      switch (role) {
-        case 'parent':
-          return appLocalizations.role_parent;
-        case 'child':
-          return appLocalizations.role_child;
-        case 'guardian':
-          return appLocalizations.role_guardian;
-        case 'administrator':
-          return appLocalizations.role_administrator;
-        default:
-          return role; // Fallback
-      }
-    }
-
-    String getRelationshipTranslation(String type) {
-      switch (type) {
-        case 'sibling':
-          return appLocalizations.relationship_sibling;
-        case 'spouse':
-          return appLocalizations.relationship_spouse;
-        case 'cousin':
-          return appLocalizations.relationship_cousin;
-        case 'grandparent':
-          return appLocalizations.relationship_grandparent;
-        case 'other':
-          return appLocalizations.relationship_other;
-        case 'pet':
-          return appLocalizations.relationship_pet;
-        case 'deceased':
-          return appLocalizations.relationship_deceased;
-        default:
-          return type;
-      }
-    }
-
-    // Stream a single family's details
-    final familyAsyncValue = ref
-        .watch(familyServiceProvider)
-        .getFamilyStream(familyId);
-    final currentUserId = ref.watch(familyServiceProvider).currentUserId;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(appLocalizations.familyDetailsTitle),
-        actions: [
-          // TODO: Implement "Leave Family" button if desired
-          // IconButton(
-          //   icon: const Icon(Icons.exit_to_app),
-          //   onPressed: () {
-          //     // Logic to leave family
-          //   },
-          // ),
-        ],
+        title: familyAsyncValue.when(
+          data: (family) => Text(family.familyName),
+          loading: () => const Text(''),
+          error: (_, __) => const Text(''),
+        ),
+        actions: const [],
       ),
-      body: StreamBuilder(
-        stream: familyAsyncValue,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(
-              child: CircularProgressIndicator(
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            );
-          }
-          if (snapshot.hasError) {
-            return Center(
-              child: Text(
-                appLocalizations.errorLoadingFamilyDetails(
-                  snapshot.error.toString(),
-                ), // Corrected to use method
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-            );
-          }
-          if (!snapshot.hasData) {
-            return Center(child: Text(appLocalizations.noFamilyMessage));
-          }
-          final family = snapshot.data!;
+      body: familyAsyncValue.when(
+        data: (family) {
           final isAdmin = family.adminUserIds.contains(currentUserId);
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  family.familyName,
-                  style: Theme.of(context).textTheme.headlineMedium,
+                _buildSectionTitle(
+                  context,
+                  appLocalizations.registeredMembersTitle,
+                ),
+                _buildMembersList(
+                  context,
+                  ref,
+                  familyId,
+                  isAdmin,
+                  currentUserId,
+                  appLocalizations,
+                ),
+                const SizedBox(height: 24),
+
+                // Nuevo: Sección para invitaciones pendientes. Solo visible para administradores.
+                if (isAdmin)
+                  _buildPendingInvitations(
+                    context,
+                    ref,
+                    currentUserId,
+                    appLocalizations,
+                  ),
+
+                if (family.unregisteredMembers.isNotEmpty) ...[
+                  const SizedBox(height: 24),
+                  _buildSectionTitle(
+                    context,
+                    appLocalizations.unregisteredMembersTitle,
+                  ),
+                  _buildUnregisteredList(
+                    context,
+                    ref,
+                    family,
+                    isAdmin,
+                    appLocalizations,
+                  ),
+                ],
+                const SizedBox(height: 24),
+                if (isAdmin)
+                  ElevatedButton(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            InviteMemberScreen(familyId: family.familyId),
+                      ),
+                    ),
+                    child: Text(appLocalizations.inviteMemberButton),
+                  ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => FamilyTreeScreen(family: family),
+                    ),
+                  ),
+                  child: Text(appLocalizations.viewFamilyTreeButton),
                 ),
                 const SizedBox(height: 16),
-                Text(
-                  appLocalizations.registeredMembersTitle,
-                  style: Theme.of(context).textTheme.titleLarge,
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                  onPressed: () =>
+                      _leaveFamily(context, ref, familyId, appLocalizations),
+                  child: Text(appLocalizations.leaveFamilyButton),
                 ),
-                const SizedBox(height: 8),
-                // Registered Members List
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics:
-                      const NeverScrollableScrollPhysics(), // Disable scrolling for nested list
-                  itemCount: family.memberUserIds.length,
-                  itemBuilder: (context, index) {
-                    final member = family.memberUserIds[index];
-                    return Card(
-                      margin: const EdgeInsets.symmetric(vertical: 4.0),
-                      child: ListTile(
-                        leading: const Icon(Icons.person),
-                        title: Text(member.displayName),
-                        subtitle: Text(
-                          getRoleTranslation(member.role),
-                        ), // Corrected to use method
-                        trailing:
-                            isAdmin &&
-                                member.userId !=
-                                    currentUserId // Admins can manage others
-                            ? IconButton(
-                                icon: const Icon(Icons.edit),
-                                onPressed: () {
-                                  // Navigate to ManageRolesScreen for this member
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (context) => ManageRolesScreen(
-                                        familyId: family.familyId,
-                                        memberUserId: member.userId,
-                                        currentRole: member.role,
-                                        memberDisplayName: member
-                                            .displayName, // Pass display name
-                                      ),
-                                    ),
-                                  );
-                                },
-                              )
-                            : null,
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  appLocalizations.unregisteredMembersTitle,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 8),
-                // Unregistered Members List
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: family.unregisteredMembers.length,
-                  itemBuilder: (context, index) {
-                    final member = family.unregisteredMembers[index];
-                    return Card(
-                      margin: const EdgeInsets.symmetric(vertical: 4.0),
-                      child: ListTile(
-                        leading: member.isPet
-                            ? const Icon(Icons.pets)
-                            : (member.isDeceased
-                                  ? const Icon(Icons.sentiment_dissatisfied)
-                                  : const Icon(Icons.person_outline)),
-                        title: Text(member.name),
-                        subtitle: Text(
-                          getRelationshipTranslation(member.relationship),
-                        ), // Corrected to use method
-                        trailing: isAdmin
-                            ? IconButton(
-                                icon: const Icon(
-                                  Icons.delete_forever,
-                                  color: Colors.red,
-                                ),
-                                onPressed: () async {
-                                  // Confirm deletion
-                                  final confirm = await showDialog<bool>(
-                                    context: context,
-                                    builder: (ctx) => AlertDialog(
-                                      title: Text(
-                                        appLocalizations.confirmDeleteTitle,
-                                      ),
-                                      content: Text(
-                                        appLocalizations
-                                            .confirmDeleteUnregisteredMember(
-                                              member.name,
-                                            ),
-                                      ), // Corrected to use method
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () =>
-                                              Navigator.of(ctx).pop(false),
-                                          child: Text(
-                                            appLocalizations.cancelButton,
-                                          ),
-                                        ),
-                                        ElevatedButton(
-                                          onPressed: () =>
-                                              Navigator.of(ctx).pop(true),
-                                          child: Text(
-                                            appLocalizations.deleteButton,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                  if (confirm == true) {
-                                    try {
-                                      // Guard against BuildContext across async gaps
-                                      if (!context.mounted) return;
-                                      await ref
-                                          .read(
-                                            familyControllerProvider.notifier,
-                                          )
-                                          .removeUnregisteredMember(
-                                            family.familyId,
-                                            member.memberId,
-                                          );
-                                      if (context.mounted) {
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          SnackBar(
-                                            content: Text(
-                                              appLocalizations
-                                                  .memberRemovedSuccess,
-                                            ),
-                                            backgroundColor: Theme.of(
-                                              context,
-                                            ).colorScheme.primary,
-                                          ),
-                                        );
-                                      }
-                                    } catch (e) {
-                                      if (context.mounted) {
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          SnackBar(
-                                            content: Text(
-                                              appLocalizations
-                                                  .memberRemovedError(
-                                                    e.toString(),
-                                                  ),
-                                            ), // Corrected to use method
-                                            backgroundColor: Theme.of(
-                                              context,
-                                            ).colorScheme.error,
-                                          ),
-                                        );
-                                      }
-                                    }
-                                  }
-                                },
-                              )
-                            : null,
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 24),
-                if (isAdmin) // Admin actions
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  InviteMemberScreen(familyId: family.familyId),
-                            ),
-                          );
-                        },
-                        child: Text(appLocalizations.inviteMemberButton),
-                      ),
-                      const SizedBox(height: 16),
-                      // TODO: Implement Family Tree View (Future Vision)
-                      // ElevatedButton(
-                      //   onPressed: () {
-                      //     // Navigate to Family Tree Screen
-                      //   },
-                      //   child: Text(appLocalizations.viewFamilyTreeButton),
-                      // ),
-                    ],
-                  ),
               ],
             ),
           );
         },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, stack) => Center(child: Text('Error: $err')),
       ),
+    );
+  }
+
+  void _leaveFamily(
+    BuildContext context,
+    WidgetRef ref,
+    String familyId,
+    AppLocalizations localizations,
+  ) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(localizations.confirmLeaveFamilyTitle),
+        content: Text(localizations.confirmLeaveFamilyMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(localizations.cancelButton),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(localizations.leaveButton),
+          ),
+        ],
+      ),
+    );
+    if (confirm == true) {
+      try {
+        await ref.read(familyControllerProvider.notifier).leaveFamily(familyId);
+        if (context.mounted) Navigator.of(context).pop();
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(e.toString())));
+        }
+      }
+    }
+  }
+
+  Widget _buildSectionTitle(BuildContext context, String title) {
+    return Text(title, style: Theme.of(context).textTheme.titleLarge);
+  }
+
+  Widget _buildMembersList(
+    BuildContext context,
+    WidgetRef ref,
+    String familyId,
+    bool isAdmin,
+    String? currentUserId,
+    AppLocalizations localizations,
+  ) {
+    final membersStream = ref.watch(familyMembersStreamProvider(familyId));
+    return membersStream.when(
+      data: (members) => ListView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: members.length,
+        itemBuilder: (context, index) {
+          final member = members[index];
+          return Card(
+            child: ListTile(
+              leading: const Icon(Icons.person),
+              title: Text(member.displayName),
+              subtitle: Text(localizations.roleLabel(member.role)),
+              trailing: isAdmin && member.userId != currentUserId
+                  ? IconButton(
+                      icon: const Icon(Icons.edit),
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => ManageRolesScreen(
+                            familyId: familyId,
+                            memberUserId: member.userId,
+                          ),
+                        ),
+                      ),
+                    )
+                  : null,
+            ),
+          );
+        },
+      ),
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, stack) => Text('Error: $err'),
+    );
+  }
+
+  // Nuevo método para construir la lista de invitaciones pendientes
+  Widget _buildPendingInvitations(
+    BuildContext context,
+    WidgetRef ref,
+    String? currentUserId,
+    AppLocalizations localizations,
+  ) {
+    final pendingInvitationsAsyncValue = ref.watch(
+      pendingInvitationsStreamProvider(currentUserId!),
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionTitle(context, localizations.pendingInvitationsTitle),
+        pendingInvitationsAsyncValue.when(
+          data: (invitations) {
+            if (invitations.isEmpty) {
+              return const SizedBox.shrink();
+            }
+            return ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: invitations.length,
+              itemBuilder: (context, index) {
+                final invitation = invitations[index];
+                return Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.person_add),
+                    title: Text(invitation.invitedEmail),
+                    subtitle: Text(
+                      '${localizations.invitedBy}: ${invitation.invitedByDisplayName}',
+                    ),
+                    trailing: Text(localizations.pendingStatus),
+                  ),
+                );
+              },
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, st) => Text('Error: $e'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildUnregisteredList(
+    BuildContext context,
+    WidgetRef ref,
+    family_model.Family family,
+    bool isAdmin,
+    AppLocalizations localizations,
+  ) {
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: family.unregisteredMembers.length,
+      itemBuilder: (context, index) {
+        final member = family.unregisteredMembers[index];
+        return Card(
+          child: ListTile(
+            leading: Icon(member.isPet ? Icons.pets : Icons.person_outline),
+            title: Text(member.name),
+            subtitle: Text(
+              localizations.relationshipLabel(member.relationship),
+            ),
+            trailing: isAdmin
+                ? IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: () async {
+                      await ref
+                          .read(familyControllerProvider.notifier)
+                          .removeUnregisteredMember(
+                            family.familyId,
+                            member.memberId,
+                          );
+                    },
+                  )
+                : null,
+          ),
+        );
+      },
     );
   }
 }
