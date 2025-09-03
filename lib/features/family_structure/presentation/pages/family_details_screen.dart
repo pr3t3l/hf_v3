@@ -23,9 +23,11 @@ final familyMembersStreamProvider = StreamProvider.autoDispose
     });
 
 final pendingInvitationsStreamProvider = StreamProvider.autoDispose
-    .family<List<Invitation>, String>((ref, userId) {
-      return ref.watch(familyServiceProvider).getPendingInvitationsStream();
-    });
+    .family<List<Invitation>, String>((ref, familyId) {
+  return ref
+      .watch(familyServiceProvider)
+      .getFamilyPendingInvitationsStream(familyId);
+});
 
 class FamilyDetailsScreen extends ConsumerWidget {
   final String familyId;
@@ -74,7 +76,7 @@ class FamilyDetailsScreen extends ConsumerWidget {
                   _buildPendingInvitations(
                     context,
                     ref,
-                    currentUserId,
+                    familyId,
                     appLocalizations,
                   ),
 
@@ -217,12 +219,11 @@ class FamilyDetailsScreen extends ConsumerWidget {
   Widget _buildPendingInvitations(
     BuildContext context,
     WidgetRef ref,
-    String? currentUserId,
+    String familyId,
     AppLocalizations localizations,
   ) {
-    final pendingInvitationsAsyncValue = ref.watch(
-      pendingInvitationsStreamProvider(currentUserId!),
-    );
+    final pendingInvitationsAsyncValue =
+        ref.watch(pendingInvitationsStreamProvider(familyId));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
