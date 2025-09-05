@@ -73,9 +73,9 @@ class FamilyController extends StateNotifier<AsyncValue<void>> {
     String familyId,
     String emailOrName, {
     required bool isRegisteredUser,
-    String? initialRole, // Role for registered user if invited
-    String?
-    initialRelationshipType, // Relationship for both registered and unregistered
+    bool isUnregisteredUserEmail = false,
+    String? initialRole,
+    String? initialRelationshipType,
     bool isDeceased = false,
     bool isPet = false,
   }) async {
@@ -85,6 +85,7 @@ class FamilyController extends StateNotifier<AsyncValue<void>> {
         familyId,
         emailOrName,
         isRegisteredUser: isRegisteredUser,
+        isUnregisteredUserEmail: isUnregisteredUserEmail,
         initialRole: initialRole,
         initialRelationshipType: initialRelationshipType,
         isDeceased: isDeceased,

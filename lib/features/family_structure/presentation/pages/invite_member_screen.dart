@@ -1,10 +1,15 @@
 // lib/features/family_structure/presentation/pages/invite_member_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hf_v3/l10n/app_localizations.dart';
 import 'package:hf_v3/features/family_structure/presentation/controllers/family_controller.dart';
-// Eliminado el import: import 'package:flutter/foundation.dart';
+
+// Enum to manage the invitation flow
+enum InvitationFlow {
+  registeredUser,
+  unregisteredByEmail,
+  unregisteredOther,
+}
 
 class InviteMemberScreen extends ConsumerStatefulWidget {
   final String familyId;
@@ -15,119 +20,96 @@ class InviteMemberScreen extends ConsumerStatefulWidget {
 }
 
 class _InviteMemberScreenState extends ConsumerState<InviteMemberScreen> {
-  final _emailOrNameController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  bool _isRegisteredUser = true; // Toggle for registered/unregistered
-  String? _selectedRole; // For registered users
-  String? _selectedRelationshipType; // For both
-  bool _isDeceased = false; // For unregistered members
-  bool _isPet = false; // For unregistered members
+  final _controller = TextEditingController();
+
+  InvitationFlow _flow = InvitationFlow.registeredUser;
+  String? _selectedRole;
+  String? _selectedRelationshipType;
+  bool _isDeceased = false;
+  bool _isPet = false;
 
   final List<String> _roles = ['parent', 'child', 'guardian', 'administrator'];
-  final List<String> _relationshipTypes = [
-    'sibling',
-    'spouse',
-    'cousin',
-    'grandparent',
-    'other',
-    'pet',
-    'deceased',
-  ];
+  final List<String> _relationshipTypes = ['sibling', 'spouse', 'cousin', 'grandparent', 'other'];
 
   @override
   void dispose() {
-    _emailOrNameController.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
   Future<void> _inviteMember() async {
-    debugPrint('InviteMemberScreen: _inviteMember llamado.');
     if (_formKey.currentState!.validate()) {
-      debugPrint('InviteMemberScreen: Formulario validado.');
       final familyController = ref.read(familyControllerProvider.notifier);
-      try {
-        final emailToInvite = _isRegisteredUser
-            ? _emailOrNameController.text.trim().toLowerCase()
-            : _emailOrNameController.text
-                  .trim(); // Normalize email to lowercase
-        debugPrint(
-          'InviteMemberScreen: Llamando a familyController.inviteMember con los siguientes datos:',
-        );
-        debugPrint('  familyId: ${widget.familyId}');
-        debugPrint('  emailOrName: $emailToInvite');
-        debugPrint('  isRegisteredUser: $_isRegisteredUser');
-        debugPrint('  initialRole: $_selectedRole');
-        debugPrint('  initialRelationshipType: $_selectedRelationshipType');
-        debugPrint('  isDeceased: $_isDeceased');
-        debugPrint('  isPet: $_isPet');
+      final value = _controller.text.trim();
 
+      try {
         await familyController.inviteMember(
           widget.familyId,
-          emailToInvite, // Usar el correo normalizado
-          isRegisteredUser: _isRegisteredUser,
+          _flow == InvitationFlow.registeredUser ? value.toLowerCase() : value,
+          isRegisteredUser: _flow == InvitationFlow.registeredUser,
+          isUnregisteredUserEmail: _flow == InvitationFlow.unregisteredByEmail,
           initialRole: _selectedRole,
           initialRelationshipType: _selectedRelationshipType,
           isDeceased: _isDeceased,
           isPet: _isPet,
         );
-        debugPrint(
-          'InviteMemberScreen: familyController.inviteMember completado con éxito.',
-        );
 
         if (mounted) {
+          // Determine the success message based on the flow
+          String message;
+          if (_flow == InvitationFlow.unregisteredByEmail) {
+            message = AppLocalizations.of(context)!.invitationSentSuccess; // Same as registered
+          } else if (_flow == InvitationFlow.unregisteredOther) {
+            message = AppLocalizations.of(context)!.memberAddedSuccess;
+          } else {
+            message = AppLocalizations.of(context)!.invitationSentSuccess;
+          }
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                _isRegisteredUser
-                    ? AppLocalizations.of(context)!.invitationSentSuccess
-                    : AppLocalizations.of(context)!.memberAddedSuccess,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onPrimary,
-                ),
+                message,
+                style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
               ),
               backgroundColor: Theme.of(context).colorScheme.primary,
               behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               margin: const EdgeInsets.all(16),
             ),
           );
-          Navigator.of(context).pop(); // Go back to family details
-          debugPrint(
-            'InviteMemberScreen: Navegación de vuelta a FamilyDetailsScreen.',
-          );
+          Navigator.of(context).pop();
         }
       } catch (e) {
-        debugPrint(
-          'InviteMemberScreen: Error al llamar a familyController.inviteMember: $e',
-        );
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                _isRegisteredUser
-                    ? AppLocalizations.of(
-                        context,
-                      )!.invitationSentError(e.toString())
-                    : AppLocalizations.of(
-                        context,
-                      )!.memberAddedError(e.toString()),
+                e.toString(),
                 style: TextStyle(color: Theme.of(context).colorScheme.onError),
               ),
               backgroundColor: Theme.of(context).colorScheme.error,
               behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               margin: const EdgeInsets.all(16),
             ),
           );
         }
       }
-    } else {
-      debugPrint('InviteMemberScreen: Formulario NO validado.');
     }
+  }
+
+  void _onFlowChanged(InvitationFlow? newFlow) {
+    if (newFlow == null) return;
+    setState(() {
+      _flow = newFlow;
+      // Reset fields when flow changes
+      _controller.clear();
+      _selectedRole = null;
+      _selectedRelationshipType = null;
+      _isDeceased = false;
+      _isPet = false;
+    });
   }
 
   @override
@@ -145,158 +127,41 @@ class _InviteMemberScreenState extends ConsumerState<InviteMemberScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                SwitchListTile(
-                  title: Text(appLocalizations.registeredUserToggle),
-                  value: _isRegisteredUser,
-                  onChanged: (bool value) {
-                    setState(() {
-                      _isRegisteredUser = value;
-                      _isDeceased = false;
-                      _isPet = false;
-                      _selectedRole = null;
-                      _selectedRelationshipType = null;
-                      _emailOrNameController.clear();
-                    });
-                  },
-                ),
-                const SizedBox(height: 16.0),
-                TextFormField(
-                  controller: _emailOrNameController,
-                  decoration: InputDecoration(
-                    labelText: _isRegisteredUser
-                        ? appLocalizations.emailLabel
-                        : appLocalizations.memberNameLabel,
-                    hintText: _isRegisteredUser
-                        ? appLocalizations.emailHint
-                        : appLocalizations.memberNameHint,
-                  ),
-                  keyboardType: _isRegisteredUser
-                      ? TextInputType.emailAddress
-                      : TextInputType.text,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return _isRegisteredUser
-                          ? appLocalizations.emailRequired
-                          : appLocalizations.memberNameRequired;
-                    }
-                    if (_isRegisteredUser &&
-                        !RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
-                      return appLocalizations.emailInvalid;
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16.0),
-                if (_isRegisteredUser) ...[
-                  DropdownButtonFormField<String>(
-                    value: _selectedRole,
-                    decoration: InputDecoration(
-                      labelText: appLocalizations.initialRoleLabel,
+                DropdownButtonFormField<InvitationFlow>(
+                  value: _flow,
+                  decoration: InputDecoration(labelText: appLocalizations.invitationTypeLabel),
+                  items: [
+                    DropdownMenuItem(
+                      value: InvitationFlow.registeredUser,
+                      child: Text(appLocalizations.invitationTypeRegisteredUser),
                     ),
-                    hint: Text(appLocalizations.selectRoleHint),
-                    items: _roles.map((String role) {
-                      return DropdownMenuItem<String>(
-                        value: role,
-                        child: Text(appLocalizations.roleLabel(role)),
-                      );
-                    }).toList(),
-                    onChanged: (String? newValue) {
-                      setState(() {
-                        _selectedRole = newValue;
-                      });
-                    },
-                    validator: (value) {
-                      if (value == null) {
-                        return appLocalizations.roleRequired;
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16.0),
-                ],
-                DropdownButtonFormField<String>(
-                  value: _selectedRelationshipType,
-                  decoration: InputDecoration(
-                    labelText: appLocalizations.initialRelationshipLabel,
-                  ),
-                  hint: Text(appLocalizations.selectRelationshipHint),
-                  items: _relationshipTypes.map((String type) {
-                    return DropdownMenuItem<String>(
-                      value: type,
-                      child: Text(appLocalizations.relationshipLabel(type)),
-                    );
-                  }).toList(),
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      _selectedRelationshipType = newValue;
-                      if (newValue == 'pet') {
-                        _isPet = true;
-                        _isDeceased = false;
-                      } else if (newValue == 'deceased') {
-                        _isDeceased = true;
-                        _isPet = false;
-                      } else {
-                        _isPet = false;
-                        _isDeceased = false;
-                      }
-                    });
-                  },
-                  validator: (value) {
-                    if (value == null) {
-                      return appLocalizations.relationshipRequired;
-                    }
-                    return null;
-                  },
+                    DropdownMenuItem(
+                      value: InvitationFlow.unregisteredByEmail,
+                      child: Text(appLocalizations.invitationTypeUnregisteredByEmail),
+                    ),
+                    DropdownMenuItem(
+                      value: InvitationFlow.unregisteredOther,
+                      child: Text(appLocalizations.invitationTypeUnregisteredOther),
+                    ),
+                  ],
+                  onChanged: _onFlowChanged,
                 ),
                 const SizedBox(height: 16.0),
-                if (!_isRegisteredUser) ...[
-                  CheckboxListTile(
-                    title: Text(appLocalizations.isDeceasedLabel),
-                    value: _isDeceased,
-                    onChanged: (bool? value) {
-                      setState(() {
-                        _isDeceased = value ?? false;
-                        if (_isDeceased) _isPet = false;
-                        if (_isDeceased &&
-                            _selectedRelationshipType != 'deceased') {
-                          _selectedRelationshipType = 'deceased';
-                        } else if (!_isDeceased &&
-                            _selectedRelationshipType == 'deceased') {
-                          _selectedRelationshipType = null;
-                        }
-                      });
-                    },
-                  ),
-                  CheckboxListTile(
-                    title: Text(appLocalizations.isPetLabel),
-                    value: _isPet,
-                    onChanged: (bool? value) {
-                      setState(() {
-                        _isPet = value ?? false;
-                        if (_isPet) _isDeceased = false;
-                        if (_isPet && _selectedRelationshipType != 'pet') {
-                          _selectedRelationshipType = 'pet';
-                        } else if (!_isPet &&
-                            _selectedRelationshipType == 'pet') {
-                          _selectedRelationshipType = null;
-                        }
-                      });
-                    },
-                  ),
+                _buildInputFormField(appLocalizations),
+                const SizedBox(height: 16.0),
+                if (_flow == InvitationFlow.registeredUser) _buildRoleDropdown(appLocalizations),
+                if (_flow != InvitationFlow.registeredUser) _buildRelationshipDropdown(appLocalizations),
+                if (_flow == InvitationFlow.unregisteredOther) ...[
                   const SizedBox(height: 16.0),
+                  _buildPetCheckbox(appLocalizations),
+                  _buildDeceasedCheckbox(appLocalizations),
                 ],
+                const SizedBox(height: 24.0),
                 familyState.isLoading
-                    ? CircularProgressIndicator(
-                        color: Theme.of(context).colorScheme.primary,
-                      )
+                    ? const CircularProgressIndicator()
                     : ElevatedButton(
                         onPressed: _inviteMember,
-                        style: Theme.of(context).elevatedButtonTheme.style,
-                        child: Text(
-                          _isRegisteredUser
-                              ? appLocalizations.sendInvitationButton
-                              : appLocalizations.addMemberButton,
-                        ),
+                        child: Text(_getButtonText(appLocalizations)),
                       ),
               ],
             ),
@@ -305,4 +170,110 @@ class _InviteMemberScreenState extends ConsumerState<InviteMemberScreen> {
       ),
     );
   }
+
+  Widget _buildInputFormField(AppLocalizations l10n) {
+    bool isEmail = _flow == InvitationFlow.registeredUser || _flow == InvitationFlow.unregisteredByEmail;
+    return TextFormField(
+      controller: _controller,
+      decoration: InputDecoration(
+        labelText: isEmail ? l10n.emailLabel : l10n.memberNameLabel,
+        hintText: isEmail ? l10n.emailHint : l10n.memberNameHint,
+      ),
+      keyboardType: isEmail ? TextInputType.emailAddress : TextInputType.text,
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return isEmail ? l10n.emailRequired : l10n.memberNameRequired;
+        }
+        if (isEmail && !RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+          return l10n.emailInvalid;
+        }
+        return null;
+      },
+    );
+  }
+
+  Widget _buildRoleDropdown(AppLocalizations l10n) {
+    return DropdownButtonFormField<String>(
+      value: _selectedRole,
+      decoration: InputDecoration(labelText: l10n.initialRoleLabel),
+      hint: Text(l10n.selectRoleHint),
+      items: _roles.map((String role) {
+        return DropdownMenuItem<String>(value: role, child: Text(l10n.roleLabel(role)));
+      }).toList(),
+      onChanged: (String? newValue) => setState(() => _selectedRole = newValue),
+      validator: (value) => value == null ? l10n.roleRequired : null,
+    );
+  }
+
+  Widget _buildRelationshipDropdown(AppLocalizations l10n) {
+    return DropdownButtonFormField<String>(
+      value: _selectedRelationshipType,
+      decoration: InputDecoration(labelText: l10n.initialRelationshipLabel),
+      hint: Text(l10n.selectRelationshipHint),
+      items: _relationshipTypes.map((String type) {
+        return DropdownMenuItem<String>(value: type, child: Text(l10n.relationshipLabel(type)));
+      }).toList(),
+      onChanged: (String? newValue) => setState(() => _selectedRelationshipType = newValue),
+      validator: (value) => value == null ? l10n.relationshipRequired : null,
+    );
+  }
+
+  Widget _buildPetCheckbox(AppLocalizations l10n) {
+    return CheckboxListTile(
+      title: Text(l10n.isPetLabel),
+      value: _isPet,
+      onChanged: (bool? value) {
+        setState(() {
+          _isPet = value ?? false;
+          if (_isPet) _isDeceased = false;
+        });
+      },
+    );
+  }
+
+  Widget _buildDeceasedCheckbox(AppLocalizations l10n) {
+    return CheckboxListTile(
+      title: Text(l10n.isDeceasedLabel),
+      value: _isDeceased,
+      onChanged: (bool? value) {
+        setState(() {
+          _isDeceased = value ?? false;
+          if (_isDeceased) _isPet = false;
+        });
+      },
+    );
+  }
+
+  String _getButtonText(AppLocalizations l10n) {
+    switch (_flow) {
+      case InvitationFlow.registeredUser:
+      case InvitationFlow.unregisteredByEmail:
+        return l10n.sendInvitationButton;
+      case InvitationFlow.unregisteredOther:
+        return l10n.addMemberButton;
+    }
+  }
 }
+
+// Add these to your AppLocalizations class
+/*
+abstract class AppLocalizations {
+  // ... other strings
+  String get invitationTypeLabel;
+  String get invitationTypeRegisteredUser;
+  String get invitationTypeUnregisteredByEmail;
+  String get invitationTypeUnregisteredOther;
+}
+
+// In app_en.arb
+"invitationTypeLabel": "Invitation Type",
+"invitationTypeRegisteredUser": "Registered User (by Email)",
+"invitationTypeUnregisteredByEmail": "Unregistered Person (by Email)",
+"invitationTypeUnregisteredOther": "Other (Pet/Deceased)",
+
+// In app_es.arb
+"invitationTypeLabel": "Tipo de Invitación",
+"invitationTypeRegisteredUser": "Usuario Registrado (por Email)",
+"invitationTypeUnregisteredByEmail": "Persona no registrada (por Email)",
+"invitationTypeUnregisteredOther": "Otro (Mascota/Fallecido)",
+*/

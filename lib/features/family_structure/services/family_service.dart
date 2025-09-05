@@ -94,6 +94,7 @@ class FamilyService {
     String familyId,
     String emailOrName, {
     required bool isRegisteredUser,
+    bool isUnregisteredUserEmail = false,
     String? initialRole,
     String? initialRelationshipType,
     bool isDeceased = false,
@@ -103,6 +104,7 @@ class FamilyService {
       'familyId': familyId,
       'emailOrName': emailOrName,
       'isRegisteredUser': isRegisteredUser,
+      'isUnregisteredUserEmail': isUnregisteredUserEmail, // New parameter
       'initialRole': initialRole,
       'initialRelationshipType': initialRelationshipType,
       'isDeceased': isDeceased,
