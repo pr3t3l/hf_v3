@@ -74,7 +74,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get confirmPasswordLabel => 'Confirm Password';
 
   @override
-  String get passwordWeak => 'Password must be at least 8 characters, include an uppercase letter, a number, and a special character.';
+  String get passwordWeak =>
+      'Password must be at least 8 characters, include an uppercase letter, a number, and a special character.';
 
   @override
   String get passwordMismatch => 'Passwords do not match.';
@@ -94,7 +95,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sendResetLinkButton => 'Send Reset Link';
 
   @override
-  String get passwordResetEmailSent => 'Password reset email sent. Check your inbox.';
+  String get passwordResetEmailSent =>
+      'Password reset email sent. Check your inbox.';
 
   @override
   String passwordResetError(Object error) {
@@ -134,7 +136,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get familySelectionTitle => 'Family Hub';
 
   @override
-  String get noFamilyMessage => 'You don\'t belong to any family yet. Create one or join an existing one!';
+  String get noFamilyMessage =>
+      'You don\'t belong to any family yet. Create one or join an existing one!';
 
   @override
   String get createFamilyButton => 'Create New Family';
@@ -168,7 +171,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get createFamilyTitle => 'Create New Family';
 
   @override
-  String get createFamilyDescription => 'Give your family a name to get started!';
+  String get createFamilyDescription =>
+      'Give your family a name to get started!';
 
   @override
   String get familyNameLabel => 'Family Name';
@@ -203,7 +207,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get invitationCodeRequired => 'Invitation code is required.';
 
   @override
-  String get invitationCodeInvalidLength => 'Invitation code must be 8 characters long.';
+  String get invitationCodeInvalidLength =>
+      'Invitation code must be 8 characters long.';
 
   @override
   String get invitationDetailsTitle => 'Invitation Details';
@@ -229,7 +234,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get noInvitationFound => 'No valid pending invitation found for this code.';
+  String get noInvitationFound =>
+      'No valid pending invitation found for this code.';
 
   @override
   String get familyJoinedSuccess => 'Successfully joined the family!';
@@ -277,7 +283,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get confirmLeaveFamilyTitle => 'Confirm Leave';
 
   @override
-  String get confirmLeaveFamilyMessage => 'Are you sure you want to leave this family?';
+  String get confirmLeaveFamilyMessage =>
+      'Are you sure you want to leave this family?';
 
   @override
   String get leaveButton => 'Leave';
@@ -442,33 +449,27 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String roleLabel(String type) {
-    String _temp0 = intl.Intl.selectLogic(
-      type,
-      {
-        'parent': 'Parent',
-        'child': 'Child',
-        'guardian': 'Guardian',
-        'administrator': 'Administrator',
-        'other': 'Other',
-      },
-    );
+    String _temp0 = intl.Intl.selectLogic(type, {
+      'parent': 'Parent',
+      'child': 'Child',
+      'guardian': 'Guardian',
+      'administrator': 'Administrator',
+      'other': 'Other',
+    });
     return '$_temp0';
   }
 
   @override
   String relationshipLabel(String type) {
-    String _temp0 = intl.Intl.selectLogic(
-      type,
-      {
-        'sibling': 'Sibling',
-        'spouse': 'Spouse',
-        'cousin': 'Cousin',
-        'grandparent': 'Grandparent',
-        'other': 'Other',
-        'pet': 'Pet',
-        'deceased': 'Deceased',
-      },
-    );
+    String _temp0 = intl.Intl.selectLogic(type, {
+      'sibling': 'Sibling',
+      'spouse': 'Spouse',
+      'cousin': 'Cousin',
+      'grandparent': 'Grandparent',
+      'other': 'Other',
+      'pet': 'Pet',
+      'deceased': 'Deceased',
+    });
     return '$_temp0';
   }
 
