@@ -19,10 +19,15 @@ interface JoinFamilyData {
   invitationCode: string;
 }
 
-// Placeholder for a function that would send an email.
-// In a real-world scenario, this would use a service like SendGrid, Mailgun, etc.
+/**
+ * Placeholder for a function that would send an invitation email.
+ * In a real-world scenario, this would use a service like SendGrid, Mailgun, etc.
+ * @param {string} email The recipient's email address.
+ * @param {string} link The sign-in link to send.
+ * @return {Promise<void>} A promise that resolves when the email is sent.
+ */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-async function sendInvitationEmail(email: string, link: string) {
+async function sendInvitationEmail(email: string, link: string): Promise<void> {
   // This is a placeholder. In a real app, you would integrate an email service.
   console.log(`Sending invitation email to ${email} with link: ${link}`);
   // Example with a theoretical email service:
