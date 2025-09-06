@@ -30,7 +30,8 @@ class AppLocalizationsEs extends AppLocalizations {
   String get emailRequired => 'El correo electrónico es obligatorio.';
 
   @override
-  String get emailInvalid => 'Por favor, introduce un correo electrónico válido.';
+  String get emailInvalid =>
+      'Por favor, introduce un correo electrónico válido.';
 
   @override
   String get passwordRequired => 'La contraseña es obligatoria.';
@@ -74,13 +75,15 @@ class AppLocalizationsEs extends AppLocalizations {
   String get confirmPasswordLabel => 'Confirmar Contraseña';
 
   @override
-  String get passwordWeak => 'La contraseña debe tener al menos 8 caracteres, incluir una mayúscula, un número y un carácter especial.';
+  String get passwordWeak =>
+      'La contraseña debe tener al menos 8 caracteres, incluir una mayúscula, un número y un carácter especial.';
 
   @override
   String get passwordMismatch => 'Las contraseñas no coinciden.';
 
   @override
-  String get registrationSuccess => '¡Registro exitoso! Por favor, inicia sesión.';
+  String get registrationSuccess =>
+      '¡Registro exitoso! Por favor, inicia sesión.';
 
   @override
   String registrationError(Object error) {
@@ -94,7 +97,8 @@ class AppLocalizationsEs extends AppLocalizations {
   String get sendResetLinkButton => 'Enviar Enlace de Restablecimiento';
 
   @override
-  String get passwordResetEmailSent => 'Correo de restablecimiento de contraseña enviado. Revisa tu bandeja de entrada.';
+  String get passwordResetEmailSent =>
+      'Correo de restablecimiento de contraseña enviado. Revisa tu bandeja de entrada.';
 
   @override
   String passwordResetError(Object error) {
@@ -134,7 +138,8 @@ class AppLocalizationsEs extends AppLocalizations {
   String get familySelectionTitle => 'Centro Familiar';
 
   @override
-  String get noFamilyMessage => 'Aún no perteneces a ninguna familia. ¡Crea una o únete a una existente!';
+  String get noFamilyMessage =>
+      'Aún no perteneces a ninguna familia. ¡Crea una o únete a una existente!';
 
   @override
   String get createFamilyButton => 'Crear Nueva Familia';
@@ -168,7 +173,8 @@ class AppLocalizationsEs extends AppLocalizations {
   String get createFamilyTitle => 'Crear Nueva Familia';
 
   @override
-  String get createFamilyDescription => '¡Dale un nombre a tu familia para empezar!';
+  String get createFamilyDescription =>
+      '¡Dale un nombre a tu familia para empezar!';
 
   @override
   String get familyNameLabel => 'Nombre de la Familia';
@@ -191,7 +197,8 @@ class AppLocalizationsEs extends AppLocalizations {
   String get joinFamilyTitle => 'Unirse a una Familia';
 
   @override
-  String get joinFamilyDescription => 'Introduce el código de invitación que recibiste.';
+  String get joinFamilyDescription =>
+      'Introduce el código de invitación que recibiste.';
 
   @override
   String get invitationCodeLabel => 'Código de Invitación';
@@ -200,10 +207,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get invitationCodeHint => 'Ej: ABC123XYZ';
 
   @override
-  String get invitationCodeRequired => 'El código de invitación es obligatorio.';
+  String get invitationCodeRequired =>
+      'El código de invitación es obligatorio.';
 
   @override
-  String get invitationCodeInvalidLength => 'El código de invitación debe tener 8 caracteres.';
+  String get invitationCodeInvalidLength =>
+      'El código de invitación debe tener 8 caracteres.';
 
   @override
   String get invitationDetailsTitle => 'Detalles de la Invitación';
@@ -229,7 +238,8 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get noInvitationFound => 'No se encontró ninguna invitación pendiente válida para este código.';
+  String get noInvitationFound =>
+      'No se encontró ninguna invitación pendiente válida para este código.';
 
   @override
   String get familyJoinedSuccess => '¡Te has unido a la familia con éxito!';
@@ -277,7 +287,8 @@ class AppLocalizationsEs extends AppLocalizations {
   String get confirmLeaveFamilyTitle => 'Confirmar salida';
 
   @override
-  String get confirmLeaveFamilyMessage => '¿Estás seguro de que quieres salir de esta familia?';
+  String get confirmLeaveFamilyMessage =>
+      '¿Estás seguro de que quieres salir de esta familia?';
 
   @override
   String get leaveButton => 'Salir';
@@ -405,7 +416,8 @@ class AppLocalizationsEs extends AppLocalizations {
   String get notificationsTitle => 'Notificaciones';
 
   @override
-  String get noPendingInvitations => 'No tienes invitaciones familiares pendientes.';
+  String get noPendingInvitations =>
+      'No tienes invitaciones familiares pendientes.';
 
   @override
   String get invitationReceivedTitle => 'Nueva Invitación Familiar';
@@ -442,33 +454,27 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String roleLabel(String type) {
-    String _temp0 = intl.Intl.selectLogic(
-      type,
-      {
-        'parent': 'Padre/Madre',
-        'child': 'Hijo/a',
-        'guardian': 'Tutor/a',
-        'administrator': 'Administrador/a',
-        'other': 'Otro',
-      },
-    );
+    String _temp0 = intl.Intl.selectLogic(type, {
+      'parent': 'Padre/Madre',
+      'child': 'Hijo/a',
+      'guardian': 'Tutor/a',
+      'administrator': 'Administrador/a',
+      'other': 'Otro',
+    });
     return '$_temp0';
   }
 
   @override
   String relationshipLabel(String type) {
-    String _temp0 = intl.Intl.selectLogic(
-      type,
-      {
-        'sibling': 'Hermano/a',
-        'spouse': 'Cónyuge',
-        'cousin': 'Primo/a',
-        'grandparent': 'Abuelo/a',
-        'other': 'Otro',
-        'pet': 'Mascota',
-        'deceased': 'Fallecido/a',
-      },
-    );
+    String _temp0 = intl.Intl.selectLogic(type, {
+      'sibling': 'Hermano/a',
+      'spouse': 'Cónyuge',
+      'cousin': 'Primo/a',
+      'grandparent': 'Abuelo/a',
+      'other': 'Otro',
+      'pet': 'Mascota',
+      'deceased': 'Fallecido/a',
+    });
     return '$_temp0';
   }
 
