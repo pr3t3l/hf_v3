@@ -26,7 +26,6 @@ interface JoinFamilyData {
  * @param {string} link The sign-in link to send.
  * @return {Promise<void>} A promise that resolves when the email is sent.
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function sendInvitationEmail(email: string, link: string): Promise<void> {
   // This is a placeholder. In a real app, you would integrate an email service.
   console.log(`Sending invitation email to ${email} with link: ${link}`);
