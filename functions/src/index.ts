@@ -39,6 +39,16 @@ async function sendInvitationEmail(email: string, link: string): Promise<void> {
   return Promise.resolve();
 }
 
+/**
+ * Handles invitations of new members to a family.
+ * Supports three scenarios:
+ * 1. Inviting an existing registered user via email.
+ * 2. Inviting a new, unregistered user via an email link.
+ * 3. Adding a non-registered member (e.g., pet, deceased) by name.
+ *
+ * @param {functions.https.CallableRequest<InviteMemberData>} request The request object containing the invitation data.
+ * @return {Promise<{status: string, message: string}>} A promise that resolves with the result of the operation.
+ */
 export const inviteFamilyMember = functions.https.onCall(
   async (request: functions.https.CallableRequest<InviteMemberData>) => {
     const {
@@ -196,10 +206,12 @@ export const inviteFamilyMember = functions.https.onCall(
   }
 );
 
-// =================================================================
-// Cloud Function: joinFamily
-// Permite a un usuario aceptar una invitación para unirse a una familia.
-// =================================================================
+/**
+ * Allows an authenticated user to join a family by providing a valid invitation code.
+ *
+ * @param {functions.https.CallableRequest<JoinFamilyData>} request The request object containing the invitation code.
+ * @return {Promise<{status: string, message: string, familyId: string}>} A promise that resolves with the result.
+ */
 export const joinFamily = functions.https.onCall(
   async (request: functions.https.CallableRequest<JoinFamilyData>) => {
     const { invitationCode } = request.data;
