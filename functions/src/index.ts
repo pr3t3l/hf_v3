@@ -286,10 +286,6 @@ export const joinFamily = functions.https.onCall(
       memberUserIds: updatedMemberUserIds,
       usersPending: updatedUsersPending,
     });
-    batch.update(familyDoc.ref, {
-      memberUserIds: updatedMemberUserIds,
-      usersPending: updatedUsersPending,
-    });
 
     // 6. Actualizar el documento del usuario: añadir el familyId
     batch.update(userDoc.ref, {
