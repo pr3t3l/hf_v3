@@ -877,6 +877,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enter email'**
   String get emailHint;
+
+  /// No description provided for @invitationTypeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Invitation Type'**
+  String get invitationTypeLabel;
+
+  /// No description provided for @invitationTypeRegisteredUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Registered User (by Email)'**
+  String get invitationTypeRegisteredUser;
+
+  /// No description provided for @invitationTypeUnregisteredByEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Unregistered Person (by Email)'**
+  String get invitationTypeUnregisteredByEmail;
+
+  /// No description provided for @invitationTypeUnregisteredOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other (Pet/Deceased)'**
+  String get invitationTypeUnregisteredOther;
 }
 
 class _AppLocalizationsDelegate

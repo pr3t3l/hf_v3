@@ -267,5 +267,9 @@
     }
   },
   "confirmPasswordRequired": "Confirm Password is required.",
-  "emailHint": "Enter email"
+  "emailHint": "Enter email",
+  "invitationTypeLabel": "Invitation Type",
+  "invitationTypeRegisteredUser": "Registered User (by Email)",
+  "invitationTypeUnregisteredByEmail": "Unregistered Person (by Email)",
+  "invitationTypeUnregisteredOther": "Other (Pet/Deceased)"
 }

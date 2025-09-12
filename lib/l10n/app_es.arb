@@ -267,5 +267,9 @@
     }
   },
   "confirmPasswordRequired": "Confirmar contraseña es obligatorio.",
-  "emailHint": "Introduce correo electrónico"
+  "emailHint": "Introduce correo electrónico",
+  "invitationTypeLabel": "Tipo de Invitación",
+  "invitationTypeRegisteredUser": "Usuario Registrado (por Email)",
+  "invitationTypeUnregisteredByEmail": "Persona no registrada (por Email)",
+  "invitationTypeUnregisteredOther": "Otro (Mascota/Fallecido)"
 }

@@ -483,4 +483,16 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get emailHint => 'Introduce correo electrónico';
+
+  @override
+  String get invitationTypeLabel => 'Tipo de Invitación';
+
+  @override
+  String get invitationTypeRegisteredUser => 'Usuario Registrado (por Email)';
+
+  @override
+  String get invitationTypeUnregisteredByEmail => 'Persona no registrada (por Email)';
+
+  @override
+  String get invitationTypeUnregisteredOther => 'Otro (Mascota/Fallecido)';
 }

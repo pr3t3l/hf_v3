@@ -34,8 +34,9 @@ class FamilyService {
         .collection('users')
         .doc(userId)
         .get();
-    if (!currentUserDoc.exists)
+    if (!currentUserDoc.exists) {
       throw Exception("Current user profile not found.");
+    }
 
     final currentUserProfile = UserProfile.fromFirestore(currentUserDoc);
     final newFamilyRef = _firestore.collection('families').doc();
@@ -94,6 +95,7 @@ class FamilyService {
     String familyId,
     String emailOrName, {
     required bool isRegisteredUser,
+    bool isUnregisteredUserEmail = false,
     String? initialRole,
     String? initialRelationshipType,
     bool isDeceased = false,
@@ -103,6 +105,7 @@ class FamilyService {
       'familyId': familyId,
       'emailOrName': emailOrName,
       'isRegisteredUser': isRegisteredUser,
+      'isUnregisteredUserEmail': isUnregisteredUserEmail, // New parameter
       'initialRole': initialRole,
       'initialRelationshipType': initialRelationshipType,
       'isDeceased': isDeceased,
@@ -276,8 +279,9 @@ class FamilyService {
       if (!familyDoc.exists) throw Exception('Family not found.');
 
       final family = family_model.Family.fromFirestore(familyDoc);
-      if (!family.memberUserIds.contains(userId))
+      if (!family.memberUserIds.contains(userId)) {
         throw Exception('User is not a member of this family.');
+      }
 
       final bool isLastAdmin =
           family.adminUserIds.contains(userId) &&
