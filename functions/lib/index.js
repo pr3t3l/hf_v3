@@ -34,33 +34,52 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.joinFamily = exports.inviteFamilyMember = void 0;
+// functions/src/familyInvitations.ts
 const functions = __importStar(require("firebase-functions/v2"));
 const admin = __importStar(require("firebase-admin"));
 const uuid_1 = require("uuid");
 admin.initializeApp();
+const normalizeEmail = (s) => s.trim().toLowerCase();
+const generateInvitationCode = () => Math.random().toString(36).substring(2, 10).toUpperCase();
+const isTimestampExpired = (ts) => {
+    if (!ts)
+        return false;
+    const ms = typeof ts.toMillis === "function" ? ts.toMillis() : (ts === null || ts === void 0 ? void 0 : ts.seconds) * 1000;
+    return typeof ms === "number" ? ms <= Date.now() : false;
+};
+// ============================== inviteFamilyMember ==============================
+/**
+ * Escenarios:
+ * 1) Usuario registrado (por email)  -> crea invitación con code, pone UID en usersPending.
+ * 2) Persona NO registrada (email)   -> crea invitación con code, manda passwordless link (extensión /mail), pone email en usersPending.
+ * 3) Miembro no registrado (nombre)  -> añade a unregisteredMembers.
+ */
 exports.inviteFamilyMember = functions.https.onCall(async (request) => {
     var _a, _b;
-    const { familyId, emailOrName, isRegisteredUser, initialRole, initialRelationshipType, isDeceased, isPet, } = request.data;
+    const { familyId, emailOrName, isRegisteredUser, isUnregisteredUserEmail, initialRole, initialRelationshipType, isDeceased, isPet, } = request.data;
     const inviterId = (_a = request.auth) === null || _a === void 0 ? void 0 : _a.uid;
     if (!inviterId) {
         throw new functions.https.HttpsError("unauthenticated", "User is not authenticated.");
     }
     const db = admin.firestore();
     const familyRef = db.collection("families").doc(familyId);
-    const familyDoc = await familyRef.get();
-    if (!familyDoc.exists) {
+    const familySnap = await familyRef.get();
+    if (!familySnap.exists) {
         throw new functions.https.HttpsError("not-found", "Familia no encontrada.");
     }
-    const familyData = familyDoc.data();
-    if (!((_b = familyData === null || familyData === void 0 ? void 0 : familyData.adminUserIds) === null || _b === void 0 ? void 0 : _b.includes(inviterId))) {
+    const familyData = (familySnap.data() || {});
+    if (!((_b = familyData.adminUserIds) === null || _b === void 0 ? void 0 : _b.includes(inviterId))) {
         throw new functions.https.HttpsError("permission-denied", "Solo los administradores pueden invitar nuevos miembros.");
     }
     const batch = db.batch();
+    const inviterProfile = (await db.collection("users").doc(inviterId).get()).data();
+    const invitedByDisplayName = (inviterProfile === null || inviterProfile === void 0 ? void 0 : inviterProfile.displayName) || "Administrator";
+    // ------------------ Escenario 1: usuario registrado por email ------------------
     if (isRegisteredUser) {
-        // Escenario 1: Invitar a un usuario ya registrado por correo electrónico
+        const normalizedEmail = normalizeEmail(emailOrName);
         const invitedUserQuery = await db
             .collection("users")
-            .where("email", "==", emailOrName)
+            .where("email", "==", normalizedEmail)
             .limit(1)
             .get();
         if (invitedUserQuery.empty) {
@@ -68,175 +87,220 @@ exports.inviteFamilyMember = functions.https.onCall(async (request) => {
         }
         const invitedUserDoc = invitedUserQuery.docs[0];
         const invitedUserId = invitedUserDoc.id;
-        // Verificar si ya es miembro o tiene una invitación pendiente
-        if (familyData.memberUserIds.some((m) => m.userId === invitedUserId)) {
+        const memberUserIds = Array.isArray(familyData.memberUserIds) ? familyData.memberUserIds : [];
+        const usersPending = Array.isArray(familyData.usersPending) ? familyData.usersPending : [];
+        if (memberUserIds.includes(invitedUserId)) {
             throw new functions.https.HttpsError("already-exists", "Este usuario ya es miembro de la familia.");
         }
-        if (familyData.usersPending.includes(invitedUserId)) {
+        if (usersPending.includes(invitedUserId)) {
             throw new functions.https.HttpsError("already-exists", "Ya existe una invitación pendiente para este usuario.");
         }
-        const invitationCode = Math.random().toString(36).substring(2, 10).toUpperCase();
         const invitationId = db.collection("invitations").doc().id;
-        const inviterProfile = (await db.collection("users").doc(inviterId).get()).data();
-        const invitedByDisplayName = (inviterProfile === null || inviterProfile === void 0 ? void 0 : inviterProfile.displayName) || "Administrador";
+        const invitationCode = generateInvitationCode();
         const newInvitation = {
             familyId,
             invitedByUserId: inviterId,
             invitedByDisplayName,
-            invitedEmail: emailOrName,
-            invitedUserId,
-            initialRole: initialRole || "child", // Rol por defecto si no se especifica
-            initialRelationshipType: initialRelationshipType || "other", // Relación por defecto
+            invitedEmail: normalizedEmail,
+            invitedUserId, // ya existe
+            initialRole: initialRole || "child",
+            initialRelationshipType: initialRelationshipType || "other",
             status: "pending",
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
-            expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + 7 * 24 * 60 * 60 * 1000), // Expira en 7 días
+            expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + 7 * 24 * 60 * 60 * 1000),
             invitationCode,
         };
         batch.set(db.collection("invitations").doc(invitationId), newInvitation);
-        // Actualizar usersPending en el documento de la familia
         batch.update(familyRef, {
-            usersPending: admin.firestore.FieldValue.arrayUnion(invitedUserId),
+            usersPending: admin.firestore.FieldValue.arrayUnion(invitedUserId), // UID en pending
         });
+        await batch.commit();
+        return { status: "success", message: "Invitación enviada a usuario registrado." };
     }
-    else {
-        // Escenario 2: Añadir un miembro no registrado (por nombre)
-        // No requiere una cuenta de usuario en la app.
-        const memberId = (0, uuid_1.v4)(); // Generar un ID único para el miembro no registrado
-        const unregisteredMember = {
-            memberId,
-            name: emailOrName,
-            relationship: initialRelationshipType || "other",
-            profileData: {}, // Datos de perfilamiento IA iniciales vacíos
-            isDeceased: isDeceased || false,
-            isPet: isPet || false,
-        };
-        // Añadir el miembro no registrado al array 'unregisteredMembers' de la familia
-        batch.update(familyRef, {
-            unregisteredMembers: admin.firestore.FieldValue.arrayUnion(unregisteredMember),
-        });
-        // Opcional: Crear una relación inicial en /familyRelationships para miembros no registrados
-        if (initialRelationshipType) {
-            const relationshipId = db.collection("familyRelationships").doc().id;
-            const relationshipData = {
-                familyId,
-                member1Ref: { type: "user", id: inviterId },
-                member2Ref: { type: "unregisteredMember", id: memberId },
-                relationshipType: initialRelationshipType,
-                dynamicType: "initial_connection",
-                description: "Relación establecida al añadir miembro no registrado.",
-                frequency: 0.1,
-                lastInteraction: admin.firestore.FieldValue.serverTimestamp(),
-                iaConfidenceScore: 0.1,
-                interactionCount: 1,
-            };
-            batch.set(db.collection("familyRelationships").doc(relationshipId), relationshipData);
+    // ---- Escenario 2: NO registrado (passwordless email link + extensión /mail) ----
+    if (isUnregisteredUserEmail) {
+        const normalizedEmail = normalizeEmail(emailOrName);
+        // Confirma que no exista ya un usuario
+        const existing = await db.collection("users").where("email", "==", normalizedEmail).limit(1).get();
+        if (!existing.empty) {
+            throw new functions.https.HttpsError("already-exists", "Este correo corresponde a un usuario registrado. Invítalo como usuario registrado.");
         }
+        const invitationId = db.collection("invitations").doc().id;
+        const invitationCode = generateInvitationCode();
+        const newInvitation = {
+            familyId,
+            invitedByUserId: inviterId,
+            invitedByDisplayName,
+            invitedEmail: normalizedEmail,
+            invitedUserId: null, // aún no hay UID
+            initialRole: initialRole || "child",
+            initialRelationshipType: initialRelationshipType || "other",
+            status: "pending", // unificado
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + 7 * 24 * 60 * 60 * 1000),
+            invitationCode, // SIEMPRE presente
+        };
+        batch.set(db.collection("invitations").doc(invitationId), newInvitation);
+        // Genera passwordless link con continue URL que incluye el invitationCode
+        const actionCodeSettings = {
+            url: `https://healthy-families-dev.web.app/join?invitationCode=${invitationCode}`,
+            handleCodeInApp: true,
+        };
+        const link = await admin.auth().generateSignInWithEmailLink(normalizedEmail, actionCodeSettings);
+        // Dispara la extensión Trigger Email (OAuth2) escribiendo en /mail
+        batch.set(db.collection("mail").doc(), {
+            to: [normalizedEmail],
+            message: {
+                subject: "¡Has sido invitado a unirte a una familia en Healthy Families!",
+                html: `<p>Hola,</p>
+                 <p>Has sido invitado a unirte a una familia.</p>
+                 <p>Usa este enlace para continuar de forma segura: <a href="${link}">Aceptar invitación</a></p>
+                 <p>Código de invitación: <b>${invitationCode}</b> (por si necesitas ingresarlo manualmente)</p>`,
+                text: `Has sido invitado a unirte a una familia. Acepta aquí: ${link}\nCódigo: ${invitationCode}`,
+            },
+        });
+        // En pending guardamos el email (no hay UID aún)
+        batch.update(familyRef, {
+            usersPending: admin.firestore.FieldValue.arrayUnion(normalizedEmail),
+        });
+        await batch.commit();
+        return { status: "success", message: "Invitación enviada a persona no registrada (email link)." };
     }
+    // ---------------------- Escenario 3: miembro no registrado ----------------------
+    const memberId = (0, uuid_1.v4)();
+    const unregisteredMember = {
+        memberId,
+        name: emailOrName, // aquí es nombre
+        relationship: initialRelationshipType || "other",
+        profileData: {},
+        isDeceased: !!isDeceased,
+        isPet: !!isPet,
+    };
+    batch.update(familyRef, {
+        unregisteredMembers: admin.firestore.FieldValue.arrayUnion(unregisteredMember),
+    });
     await batch.commit();
-    return { status: "success", message: "Invitación/Miembro añadido con éxito." };
+    return { status: "success", message: "Miembro no registrado añadido con éxito." };
 });
-// =================================================================
-// Cloud Function: joinFamily
-// Permite a un usuario aceptar una invitación para unirse a una familia.
-// =================================================================
+// ================================= joinFamily =================================
+/**
+ * Acepta la invitación por `invitationCode`.
+ * Reglas:
+ * - Invitación debe estar en `status: "pending"` y no expirada.
+ * - Si existe `invitedUserId`, debe coincidir con el `uid` actual.
+ * - Si NO existe `invitedUserId`, debe coincidir el email del usuario autenticado con `invitedEmail` (normalizado).
+ * - Mueve de `usersPending` a `memberUserIds` y limpia por uid/email.
+ * - Marca la invitación como `accepted` y, si no tenía `invitedUserId`, lo setea.
+ * - Crea relación inicial idempotente en `/familyRelationships`.
+ */
 exports.joinFamily = functions.https.onCall(async (request) => {
-    var _a, _b;
+    var _a;
     const { invitationCode } = request.data;
     const userId = (_a = request.auth) === null || _a === void 0 ? void 0 : _a.uid;
-    // 1. Autenticación del usuario
     if (!userId) {
         throw new functions.https.HttpsError("unauthenticated", "El usuario no está autenticado.");
     }
     const db = admin.firestore();
-    // 2. Encontrar y validar la invitación
-    const invitationQuery = await db.collection("invitations")
+    // 1) Recuperar invitación por código
+    const invitationSnap = await db
+        .collection("invitations")
         .where("invitationCode", "==", invitationCode)
-        .where("status", "==", "pending")
-        .where("invitedUserId", "==", userId)
         .limit(1)
         .get();
-    if (invitationQuery.empty) {
-        throw new functions.https.HttpsError("not-found", "Invitación no encontrada o ya no es válida.");
+    if (invitationSnap.empty) {
+        throw new functions.https.HttpsError("not-found", "Invitación no encontrada.");
     }
-    const invitationDoc = invitationQuery.docs[0];
-    const invitationData = invitationDoc.data();
-    const familyId = invitationData.familyId;
-    // 3. Obtener los documentos del usuario y de la familia en paralelo (Promise.all)
-    const [userDoc, familyDoc] = await Promise.all([
+    const invitationDoc = invitationSnap.docs[0];
+    const inv = invitationDoc.data();
+    // 2) Validar estado/expiración
+    if (inv.status !== "pending") {
+        throw new functions.https.HttpsError("failed-precondition", "La invitación no está disponible.");
+    }
+    if (isTimestampExpired(inv.expiresAt)) {
+        throw new functions.https.HttpsError("failed-precondition", "La invitación ha expirado.");
+    }
+    // 3) Cargar usuario y familia
+    const [userSnap, familySnap] = await Promise.all([
         db.collection("users").doc(userId).get(),
-        db.collection("families").doc(familyId).get(),
+        db.collection("families").doc(inv.familyId).get(),
     ]);
-    if (!userDoc.exists) {
+    if (!userSnap.exists) {
         throw new functions.https.HttpsError("not-found", "Perfil de usuario no encontrado.");
     }
-    if (!familyDoc.exists) {
-        throw new functions.https.HttpsError("not-found", "Familia no existe.");
+    if (!familySnap.exists) {
+        throw new functions.https.HttpsError("not-found", "Familia no encontrada.");
     }
-    const familyData = familyDoc.data();
-    // 4. Validar que el usuario no sea ya un miembro
-    if ((_b = familyData === null || familyData === void 0 ? void 0 : familyData.memberUserIds) === null || _b === void 0 ? void 0 : _b.some((m) => m.userId === userId)) {
+    const user = userSnap.data();
+    const userEmail = (user === null || user === void 0 ? void 0 : user.email) ? normalizeEmail(String(user.email)) : "";
+    if (!userEmail) {
+        throw new functions.https.HttpsError("failed-precondition", "El usuario no tiene email registrado.");
+    }
+    // 4) Validar destinatario
+    if (inv.invitedUserId && inv.invitedUserId !== userId) {
+        throw new functions.https.HttpsError("permission-denied", "La invitación no corresponde a este usuario.");
+    }
+    if (!inv.invitedUserId) {
+        const invitedEmail = inv.invitedEmail ? normalizeEmail(String(inv.invitedEmail)) : "";
+        if (!invitedEmail || invitedEmail !== userEmail) {
+            throw new functions.https.HttpsError("permission-denied", "La invitación no corresponde a este email.");
+        }
+    }
+    const familyData = (familySnap.data() || {});
+    const memberUserIds = Array.isArray(familyData.memberUserIds) ? familyData.memberUserIds : [];
+    const usersPending = Array.isArray(familyData.usersPending) ? familyData.usersPending : [];
+    // 5) Evitar duplicados
+    if (memberUserIds.includes(userId)) {
         throw new functions.https.HttpsError("already-exists", "Ya eres miembro de esta familia.");
     }
+    // 6) Actualizaciones atómicas
     const batch = db.batch();
-    // 5. Actualizar el documento de la familia:
-    //    - Mover al usuario de 'usersPending' a 'memberUserIds'.
-    //    - Corregido para añadir solo el UID al array.
-    const updatedMemberUserIds = [...familyData.memberUserIds, userId]; // AHORA ES CORRECTO
-    const updatedUsersPending = familyData.usersPending.filter((uid) => uid !== userId);
-    batch.update(familyDoc.ref, {
+    const updatedMemberUserIds = [...memberUserIds, userId];
+    const updatedUsersPending = usersPending.filter((x) => x !== userId && (typeof x !== "string" || normalizeEmail(x) !== userEmail));
+    batch.update(familySnap.ref, {
         memberUserIds: updatedMemberUserIds,
         usersPending: updatedUsersPending,
     });
-    batch.update(familyDoc.ref, {
-        memberUserIds: updatedMemberUserIds,
-        usersPending: updatedUsersPending,
+    batch.update(userSnap.ref, {
+        familyIds: admin.firestore.FieldValue.arrayUnion(inv.familyId),
     });
-    // 6. Actualizar el documento del usuario: añadir el familyId
-    batch.update(userDoc.ref, {
-        familyIds: admin.firestore.FieldValue.arrayUnion(familyId),
-    });
-    // 7. Actualizar el estado de la invitación a "accepted"
-    batch.update(invitationDoc.ref, {
-        status: "accepted",
-    });
-    // 8. Crear una relación inicial en /familyRelationships (IDEMPOTENTE)
-    // Verificar si la relación ya existe para evitar duplicados.
-    // Se verifica en ambas direcciones (A-B y B-A)
-    const member1Id = invitationData.invitedByUserId;
+    const invitationUpdate = { status: "accepted" };
+    if (!inv.invitedUserId) {
+        invitationUpdate.invitedUserId = userId;
+    }
+    batch.update(invitationDoc.ref, invitationUpdate);
+    // 7) Relación inicial idempotente
+    const member1Id = inv.invitedByUserId;
     const member2Id = userId;
-    const existingRelationshipQuery = await db.collection("familyRelationships")
-        .where("familyId", "==", familyId)
-        .where("member1Ref.id", "==", member1Id)
-        .where("member2Ref.id", "==", member2Id)
-        .limit(1)
-        .get();
-    const existingRelationshipQueryReverse = await db.collection("familyRelationships")
-        .where("familyId", "==", familyId)
-        .where("member1Ref.id", "==", member2Id)
-        .where("member2Ref.id", "==", member1Id)
-        .limit(1)
-        .get();
-    if (existingRelationshipQuery.empty && existingRelationshipQueryReverse.empty) {
+    const [q1, q2] = await Promise.all([
+        db.collection("familyRelationships")
+            .where("familyId", "==", inv.familyId)
+            .where("member1Ref.id", "==", member1Id)
+            .where("member2Ref.id", "==", member2Id)
+            .limit(1)
+            .get(),
+        db.collection("familyRelationships")
+            .where("familyId", "==", inv.familyId)
+            .where("member1Ref.id", "==", member2Id)
+            .where("member2Ref.id", "==", member1Id)
+            .limit(1)
+            .get(),
+    ]);
+    if (q1.empty && q2.empty) {
         const relationshipId = db.collection("familyRelationships").doc().id;
-        const relationshipData = {
-            familyId,
+        batch.set(db.collection("familyRelationships").doc(relationshipId), {
+            familyId: inv.familyId,
             member1Ref: { type: "user", id: member1Id },
             member2Ref: { type: "user", id: member2Id },
-            relationshipType: invitationData.initialRelationshipType || "other",
+            relationshipType: inv.initialRelationshipType || "other",
             dynamicType: "initial_connection",
             description: "Relación inicial establecida al unirse a la familia.",
             frequency: 0.1,
             lastInteraction: admin.firestore.FieldValue.serverTimestamp(),
             iaConfidenceScore: 0.1,
             interactionCount: 1,
-        };
-        batch.set(db.collection("familyRelationships").doc(relationshipId), relationshipData);
+        });
     }
-    else {
-        console.log("Ya existe una relación entre estos miembros, se omite la creación.");
-    }
-    // 9. Commit del lote de escrituras
     await batch.commit();
-    return { status: "success", message: "¡Te has unido a la familia con éxito!", familyId };
+    return { status: "success", message: "¡Te has unido a la familia con éxito!", familyId: inv.familyId };
 });
 //# sourceMappingURL=index.js.map
