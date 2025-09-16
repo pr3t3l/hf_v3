@@ -1,3 +1,4 @@
+// functions/src/familyInvitations.ts
 import * as functions from "firebase-functions/v2";
 import * as admin from "firebase-admin";
 import { v4 as uuidv4 } from "uuid";
@@ -6,9 +7,9 @@ admin.initializeApp();
 
 interface InviteMemberData {
   familyId: string;
-  emailOrName: string;            // email (esc. 1 y 2) o nombre (esc. 3)
-  isRegisteredUser: boolean;      // true => esc. 1; false => esc. 2 o 3
-  isUnregisteredUserEmail?: boolean; // true => esc. 2; false/undefined => esc. 3
+  emailOrName: string; // email (esc.1/2) o nombre (esc.3)
+  isRegisteredUser: boolean; // true => esc.1; false => esc.2 o 3
+  isUnregisteredUserEmail?: boolean; // true => esc.2
   initialRole?: string;
   initialRelationshipType?: string;
   isDeceased?: boolean;
@@ -19,16 +20,30 @@ interface JoinFamilyData {
   invitationCode: string;
 }
 
-const normalizeEmail = (s: string) => s.trim().toLowerCase();
+type FamilyDoc = {
+  adminUserIds?: string[];
+  memberUserIds?: string[]; // SIEMPRE string[] de UIDs
+  usersPending?: (string)[]; // email o uid (string)
+  unregisteredMembers?: any[];
+};
 
-// --- inviteFamilyMember ------------------------------------------------------
+const normalizeEmail = (s: string) => s.trim().toLowerCase();
+const generateInvitationCode = () =>
+  Math.random().toString(36).substring(2, 10).toUpperCase();
+
+const isTimestampExpired = (ts: any) => {
+  if (!ts) return false;
+  const ms = typeof ts.toMillis === "function" ? ts.toMillis() : ts?.seconds * 1000;
+  return typeof ms === "number" ? ms <= Date.now() : false;
+};
+
+// ============================== inviteFamilyMember ==============================
 
 /**
- * Maneja la invitación de nuevos miembros a una familia.
- * Soporta 3 escenarios:
- * 1) Usuario registrado por email.
- * 2) Persona NO registrada por email (passwordless link + extensión /mail).
- * 3) Miembro no registrado (mascota/fallecido) por nombre.
+ * Escenarios:
+ * 1) Usuario registrado (por email)  -> crea invitación con code, pone UID en usersPending.
+ * 2) Persona NO registrada (email)   -> crea invitación con code, manda passwordless link (extensión /mail), pone email en usersPending.
+ * 3) Miembro no registrado (nombre)  -> añade a unregisteredMembers.
  */
 export const inviteFamilyMember = functions.https.onCall(
   async (request: functions.https.CallableRequest<InviteMemberData>) => {
@@ -50,13 +65,14 @@ export const inviteFamilyMember = functions.https.onCall(
 
     const db = admin.firestore();
     const familyRef = db.collection("families").doc(familyId);
-    const familyDoc = await familyRef.get();
-    if (!familyDoc.exists) {
+    const familySnap = await familyRef.get();
+
+    if (!familySnap.exists) {
       throw new functions.https.HttpsError("not-found", "Familia no encontrada.");
     }
 
-    const familyData = familyDoc.data() as any;
-    if (!familyData?.adminUserIds?.includes(inviterId)) {
+    const familyData = (familySnap.data() || {}) as FamilyDoc;
+    if (!familyData.adminUserIds?.includes(inviterId)) {
       throw new functions.https.HttpsError(
         "permission-denied",
         "Solo los administradores pueden invitar nuevos miembros."
@@ -64,8 +80,10 @@ export const inviteFamilyMember = functions.https.onCall(
     }
 
     const batch = db.batch();
+    const inviterProfile = (await db.collection("users").doc(inviterId).get()).data();
+    const invitedByDisplayName = inviterProfile?.displayName || "Administrator";
 
-    // ESCENARIO 1: Usuario registrado (por email)
+    // ------------------ Escenario 1: usuario registrado por email ------------------
     if (isRegisteredUser) {
       const normalizedEmail = normalizeEmail(emailOrName);
 
@@ -85,8 +103,8 @@ export const inviteFamilyMember = functions.https.onCall(
       const invitedUserDoc = invitedUserQuery.docs[0];
       const invitedUserId = invitedUserDoc.id;
 
-      const memberUserIds: string[] = Array.isArray(familyData.memberUserIds) ? familyData.memberUserIds : [];
-      const usersPending: (string)[] = Array.isArray(familyData.usersPending) ? familyData.usersPending : [];
+      const memberUserIds = Array.isArray(familyData.memberUserIds) ? familyData.memberUserIds : [];
+      const usersPending = Array.isArray(familyData.usersPending) ? familyData.usersPending : [];
 
       if (memberUserIds.includes(invitedUserId)) {
         throw new functions.https.HttpsError("already-exists", "Este usuario ya es miembro de la familia.");
@@ -95,17 +113,15 @@ export const inviteFamilyMember = functions.https.onCall(
         throw new functions.https.HttpsError("already-exists", "Ya existe una invitación pendiente para este usuario.");
       }
 
-      const invitationCode = Math.random().toString(36).substring(2, 10).toUpperCase();
       const invitationId = db.collection("invitations").doc().id;
-      const inviterProfile = (await db.collection("users").doc(inviterId).get()).data();
-      const invitedByDisplayName = inviterProfile?.displayName || "Administrator";
+      const invitationCode = generateInvitationCode();
 
       const newInvitation = {
         familyId,
         invitedByUserId: inviterId,
         invitedByDisplayName,
         invitedEmail: normalizedEmail,
-        invitedUserId,
+        invitedUserId, // ya existe
         initialRole: initialRole || "child",
         initialRelationshipType: initialRelationshipType || "other",
         status: "pending",
@@ -123,27 +139,21 @@ export const inviteFamilyMember = functions.https.onCall(
       return { status: "success", message: "Invitación enviada a usuario registrado." };
     }
 
-    // ESCENARIO 2: Persona NO registrada (por email con enlace passwordless)
+    // ---- Escenario 2: NO registrado (passwordless email link + extensión /mail) ----
     if (isUnregisteredUserEmail) {
       const normalizedEmail = normalizeEmail(emailOrName);
 
-      // Debe NO existir usuario con ese email
-      const invitedUserQuery = await db
-        .collection("users")
-        .where("email", "==", normalizedEmail)
-        .limit(1)
-        .get();
-      if (!invitedUserQuery.empty) {
+      // Confirma que no exista ya un usuario
+      const existing = await db.collection("users").where("email", "==", normalizedEmail).limit(1).get();
+      if (!existing.empty) {
         throw new functions.https.HttpsError(
           "already-exists",
-          "Un usuario con este correo electrónico ya está registrado. Invítalo como usuario registrado."
+          "Este correo corresponde a un usuario registrado. Invítalo como usuario registrado."
         );
       }
 
       const invitationId = db.collection("invitations").doc().id;
-      const invitationCode = Math.random().toString(36).substring(2, 10).toUpperCase();
-      const inviterProfile = (await db.collection("users").doc(inviterId).get()).data();
-      const invitedByDisplayName = inviterProfile?.displayName || "Administrator";
+      const invitationCode = generateInvitationCode();
 
       const newInvitation = {
         familyId,
@@ -153,33 +163,34 @@ export const inviteFamilyMember = functions.https.onCall(
         invitedUserId: null, // aún no hay UID
         initialRole: initialRole || "child",
         initialRelationshipType: initialRelationshipType || "other",
-        status: "pending", // importante: 'pending' para que joinFamily la encuentre
+        status: "pending", // unificado
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        invitationCode, // código presente para uniformidad del flujo
+        invitationCode, // SIEMPRE presente
       };
       batch.set(db.collection("invitations").doc(invitationId), newInvitation);
 
-      // Generar link passwordless incluyendo invitationCode en la continue URL
+      // Genera passwordless link con continue URL que incluye el invitationCode
       const actionCodeSettings = {
         url: `https://healthy-families-dev.web.app/join?invitationCode=${invitationCode}`,
         handleCodeInApp: true,
       };
       const link = await admin.auth().generateSignInWithEmailLink(normalizedEmail, actionCodeSettings);
 
-      // Escribir en /mail para disparar la extensión Trigger Email (OAuth2)
+      // Dispara la extensión Trigger Email (OAuth2) escribiendo en /mail
       batch.set(db.collection("mail").doc(), {
         to: [normalizedEmail],
         message: {
-          subject: "¡Has sido invitado a unirte a una familia!",
-          html: `<p><b>Hola,</b></p>
-                 <p>Has sido invitado a unirte a una familia en Healthy Families.</p>
-                 <p>Utiliza este enlace para continuar el proceso seguro: <a href="${link}">Aceptar invitación</a></p>`,
-          text: `Has sido invitado a unirte a una familia. Abre este enlace para aceptar: ${link}`,
+          subject: "¡Has sido invitado a unirte a una familia en Healthy Families!",
+          html: `<p>Hola,</p>
+                 <p>Has sido invitado a unirte a una familia.</p>
+                 <p>Usa este enlace para continuar de forma segura: <a href="${link}">Aceptar invitación</a></p>
+                 <p>Código de invitación: <b>${invitationCode}</b> (por si necesitas ingresarlo manualmente)</p>`,
+          text: `Has sido invitado a unirte a una familia. Acepta aquí: ${link}\nCódigo: ${invitationCode}`,
         },
       });
 
-      // En pending guardamos el identificador disponible (email). Luego joinFamily lo limpiará por uid o email.
+      // En pending guardamos el email (no hay UID aún)
       batch.update(familyRef, {
         usersPending: admin.firestore.FieldValue.arrayUnion(normalizedEmail),
       });
@@ -188,11 +199,11 @@ export const inviteFamilyMember = functions.https.onCall(
       return { status: "success", message: "Invitación enviada a persona no registrada (email link)." };
     }
 
-    // ESCENARIO 3: Miembro no registrado (mascota/fallecido) por nombre
+    // ---------------------- Escenario 3: miembro no registrado ----------------------
     const memberId = uuidv4();
     const unregisteredMember = {
       memberId,
-      name: emailOrName, // aquí es nombre, no email
+      name: emailOrName, // aquí es nombre
       relationship: initialRelationshipType || "other",
       profileData: {},
       isDeceased: !!isDeceased,
@@ -208,13 +219,17 @@ export const inviteFamilyMember = functions.https.onCall(
   }
 );
 
-// --- joinFamily --------------------------------------------------------------
+// ================================= joinFamily =================================
 
 /**
- * Permite a un usuario autenticado unirse a una familia proporcionando un invitationCode válido.
- * Soporta:
- *  - Invitaciones a usuarios ya registrados (invitedUserId presente).
- *  - Invitaciones passwordless (invitedUserId null), verificando coincidencia por email.
+ * Acepta la invitación por `invitationCode`.
+ * Reglas:
+ * - Invitación debe estar en `status: "pending"` y no expirada.
+ * - Si existe `invitedUserId`, debe coincidir con el `uid` actual.
+ * - Si NO existe `invitedUserId`, debe coincidir el email del usuario autenticado con `invitedEmail` (normalizado).
+ * - Mueve de `usersPending` a `memberUserIds` y limpia por uid/email.
+ * - Marca la invitación como `accepted` y, si no tenía `invitedUserId`, lo setea.
+ * - Crea relación inicial idempotente en `/familyRelationships`.
  */
 export const joinFamily = functions.https.onCall(
   async (request: functions.https.CallableRequest<JoinFamilyData>) => {
@@ -239,129 +254,113 @@ export const joinFamily = functions.https.onCall(
     }
 
     const invitationDoc = invitationSnap.docs[0];
-    const invitationData = invitationDoc.data() as any;
+    const inv = invitationDoc.data() as any;
 
-    // 2) Validar estado y expiración
-    const isPending = invitationData.status === "pending";
-    const notExpired =
-      !invitationData.expiresAt ||
-      (invitationData.expiresAt.toMillis && invitationData.expiresAt.toMillis() > Date.now());
-
-    if (!isPending || !notExpired) {
-      throw new functions.https.HttpsError("failed-precondition", "Invitación no válida o expirada.");
+    // 2) Validar estado/expiración
+    if (inv.status !== "pending") {
+      throw new functions.https.HttpsError("failed-precondition", "La invitación no está disponible.");
     }
-
-    const familyId = invitationData.familyId;
+    if (isTimestampExpired(inv.expiresAt)) {
+      throw new functions.https.HttpsError("failed-precondition", "La invitación ha expirado.");
+    }
 
     // 3) Cargar usuario y familia
-    const [userDoc, familyDoc] = await Promise.all([
+    const [userSnap, familySnap] = await Promise.all([
       db.collection("users").doc(userId).get(),
-      db.collection("families").doc(familyId).get(),
+      db.collection("families").doc(inv.familyId).get(),
     ]);
 
-    if (!userDoc.exists) {
+    if (!userSnap.exists) {
       throw new functions.https.HttpsError("not-found", "Perfil de usuario no encontrado.");
     }
-    if (!familyDoc.exists) {
-      throw new functions.https.HttpsError("not-found", "Familia no existe.");
+    if (!familySnap.exists) {
+      throw new functions.https.HttpsError("not-found", "Familia no encontrada.");
     }
 
-    const user = userDoc.data() as any;
-    const userEmail = (user?.email ? String(user.email) : "").toLowerCase();
+    const user = userSnap.data() as any;
+    const userEmail = user?.email ? normalizeEmail(String(user.email)) : "";
     if (!userEmail) {
       throw new functions.https.HttpsError("failed-precondition", "El usuario no tiene email registrado.");
     }
 
-    const familyData = familyDoc.data() as { memberUserIds?: string[]; usersPending?: (string)[] };
-
-    // 4) Validar destinatario de la invitación
-    // - Si la invitación ya trae invitedUserId, debe coincidir con el uid actual.
-    // - Si no trae invitedUserId, debe coincidir el email del usuario con invitedEmail.
-    if (invitationData.invitedUserId && invitationData.invitedUserId !== userId) {
+    // 4) Validar destinatario
+    if (inv.invitedUserId && inv.invitedUserId !== userId) {
       throw new functions.https.HttpsError("permission-denied", "La invitación no corresponde a este usuario.");
     }
-    if (!invitationData.invitedUserId) {
-      const invitedEmail = (invitationData.invitedEmail || "").toLowerCase();
+    if (!inv.invitedUserId) {
+      const invitedEmail = inv.invitedEmail ? normalizeEmail(String(inv.invitedEmail)) : "";
       if (!invitedEmail || invitedEmail !== userEmail) {
         throw new functions.https.HttpsError("permission-denied", "La invitación no corresponde a este email.");
       }
     }
 
-    // 5) Evitar duplicados en miembros
-    const memberUserIds: string[] = Array.isArray(familyData?.memberUserIds) ? familyData!.memberUserIds! : [];
+    const familyData = (familySnap.data() || {}) as FamilyDoc;
+    const memberUserIds = Array.isArray(familyData.memberUserIds) ? familyData.memberUserIds : [];
+    const usersPending = Array.isArray(familyData.usersPending) ? familyData.usersPending : [];
+
+    // 5) Evitar duplicados
     if (memberUserIds.includes(userId)) {
       throw new functions.https.HttpsError("already-exists", "Ya eres miembro de esta familia.");
     }
 
-    const usersPending: (string)[] = Array.isArray(familyData?.usersPending) ? familyData!.usersPending! : [];
-
+    // 6) Actualizaciones atómicas
     const batch = db.batch();
-
-    // 6) Actualizaciones atómicas:
-    // - Mover usuario a miembros (string[] de uid)
-    // - Limpiar pending por uid o email
     const updatedMemberUserIds = [...memberUserIds, userId];
-    const updatedUsersPending = usersPending.filter((x) => x !== userId && x.toLowerCase?.() !== userEmail);
+    const updatedUsersPending = usersPending.filter(
+      (x) => x !== userId && (typeof x !== "string" || normalizeEmail(x) !== userEmail)
+    );
 
-    batch.update(familyDoc.ref, {
+    batch.update(familySnap.ref, {
       memberUserIds: updatedMemberUserIds,
       usersPending: updatedUsersPending,
     });
 
-    // - Añadir familyId al usuario
-    batch.update(userDoc.ref, {
-      familyIds: admin.firestore.FieldValue.arrayUnion(familyId),
+    batch.update(userSnap.ref, {
+      familyIds: admin.firestore.FieldValue.arrayUnion(inv.familyId),
     });
 
-    // - Marcar invitación como aceptada y, si no tenía invitedUserId, setearlo
     const invitationUpdate: any = { status: "accepted" };
-    if (!invitationData.invitedUserId) {
+    if (!inv.invitedUserId) {
       invitationUpdate.invitedUserId = userId;
     }
     batch.update(invitationDoc.ref, invitationUpdate);
 
-    // 7) Crear relación inicial en /familyRelationships si no existe (idempotente)
-    const member1Id = invitationData.invitedByUserId;
+    // 7) Relación inicial idempotente
+    const member1Id = inv.invitedByUserId;
     const member2Id = userId;
 
-    const existingRelationshipQuery = await db
-      .collection("familyRelationships")
-      .where("familyId", "==", familyId)
-      .where("member1Ref.id", "==", member1Id)
-      .where("member2Ref.id", "==", member2Id)
-      .limit(1)
-      .get();
+    const [q1, q2] = await Promise.all([
+      db.collection("familyRelationships")
+        .where("familyId", "==", inv.familyId)
+        .where("member1Ref.id", "==", member1Id)
+        .where("member2Ref.id", "==", member2Id)
+        .limit(1)
+        .get(),
+      db.collection("familyRelationships")
+        .where("familyId", "==", inv.familyId)
+        .where("member1Ref.id", "==", member2Id)
+        .where("member2Ref.id", "==", member1Id)
+        .limit(1)
+        .get(),
+    ]);
 
-    const existingRelationshipQueryReverse = await db
-      .collection("familyRelationships")
-      .where("familyId", "==", familyId)
-      .where("member1Ref.id", "==", member2Id)
-      .where("member2Ref.id", "==", member1Id)
-      .limit(1)
-      .get();
-
-    if (existingRelationshipQuery.empty && existingRelationshipQueryReverse.empty) {
+    if (q1.empty && q2.empty) {
       const relationshipId = db.collection("familyRelationships").doc().id;
-      const relationshipData = {
-        familyId,
+      batch.set(db.collection("familyRelationships").doc(relationshipId), {
+        familyId: inv.familyId,
         member1Ref: { type: "user", id: member1Id },
         member2Ref: { type: "user", id: member2Id },
-        relationshipType: invitationData.initialRelationshipType || "other",
+        relationshipType: inv.initialRelationshipType || "other",
         dynamicType: "initial_connection",
         description: "Relación inicial establecida al unirse a la familia.",
         frequency: 0.1,
         lastInteraction: admin.firestore.FieldValue.serverTimestamp(),
         iaConfidenceScore: 0.1,
         interactionCount: 1,
-      };
-      batch.set(db.collection("familyRelationships").doc(relationshipId), relationshipData);
-    } else {
-      console.log("Ya existe una relación entre estos miembros, se omite la creación.");
+      });
     }
 
-    // 8) Commit
     await batch.commit();
-
-    return { status: "success", message: "¡Te has unido a la familia con éxito!", familyId };
+    return { status: "success", message: "¡Te has unido a la familia con éxito!", familyId: inv.familyId };
   }
 );
